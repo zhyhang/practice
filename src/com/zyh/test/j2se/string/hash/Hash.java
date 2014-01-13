@@ -12,7 +12,7 @@ public class Hash {
 				+ sun.misc.Hashing.stringHash32(str));
 		double d=12222222222.11111111d;
 		BigDecimal bd=new BigDecimal(d);
-		bd=bd.setScale(3, BigDecimal.ROUND_HALF_UP);
+//		bd=bd.setScale(3, BigDecimal.ROUND_HALF_UP);
 		
 		System.out.println(Double.toString(d));
 		System.out.println(bd.toString());
@@ -21,5 +21,6 @@ public class Hash {
 		System.out.println(f.format(d));
 		double newD=Math.round((d+0.0005d)*1000d)/1000d;
 		System.out.println(newD);
+		
 	}
 }
