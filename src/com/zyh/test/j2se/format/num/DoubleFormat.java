@@ -281,6 +281,7 @@ public class DoubleFormat {
 		}
 	}
 	
+	//this is a performace test
 	public static void main(String[] argv){
 		//performace test
 		int testCounter=100000;
@@ -307,6 +308,7 @@ public class DoubleFormat {
 					bigDecFormat(bd.doubleValue(), i);
 				}
 			}
+			
 			long tsbgf=System.nanoTime();
 			System.out.println("Precision-"+String.valueOf(i)+" and Loop times-"+String.valueOf(testCounter)+":");
 			System.out.println("NumberFormat time cost(ms): " + TimeUnit.NANOSECONDS.toMillis(tsf - ts));
