@@ -21,5 +21,7 @@ public class Hash {
 		System.out.println(f.format(d));
 		double newD=Math.round((d+0.0005d)*1000d)/1000d;
 		System.out.println(newD);
+		
+		System.out.println("test end");
 	}
 }
