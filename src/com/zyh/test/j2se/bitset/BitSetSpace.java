@@ -2,6 +2,11 @@ package com.zyh.test.j2se.bitset;
 
 import java.util.BitSet;
 
+/**
+ * Bit set using for ip segments
+ * @author zhyhang
+ *
+ */
 public class BitSetSpace {
 
 	public static void main(String[] args) {
