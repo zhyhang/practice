@@ -7,6 +7,10 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class DoubleFormat {
+	
+	/**
+	 * 提高性能的处理，预置好前导零
+	 */
 	public final static char[][] LEADING_DECIMALS=new char[][]{
 		"0.".toCharArray(),
 		"0.0".toCharArray(),
