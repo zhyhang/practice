@@ -288,7 +288,7 @@ public class DoubleFormat {
 	//this is a performace test
 	public static void main(String[] argv){
 		//performace test
-		int testCounter=100000;
+		int testCounter=10000;
 		for (int i = 0; i < 9; i++) {
 			NumberFormat f = NumberFormat.getNumberInstance();
 			f.setGroupingUsed(false);
