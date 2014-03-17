@@ -8,13 +8,17 @@ import java.util.BitSet;
  *
  */
 public class BitSetSpace {
+	
+	private static final long ONE_32 = 0xFFFFFFFFL;
 
 	public static void main(String[] args) {
 		BitSet bs = new BitSet();
-		bs.set(2, 10);
+		bs.set(0, 10);
 		bs.set(11, 30);
-		// generate 1000 bits
-		for (int i = 0; i < 1000; i++) {
+		bs.set(36);
+		bs.set(Integer.MAX_VALUE-1);
+		// generate 100 bits
+		for (int i = 0; i < 100; i++) {
 			int bIndex = (int) (Integer.MAX_VALUE * Math.random());
 			if (bIndex > Integer.MAX_VALUE - 5) {
 				bIndex = Integer.MAX_VALUE - 5;
@@ -24,9 +28,10 @@ public class BitSetSpace {
 			bs.set(bIndex + 2);
 			bs.set(bIndex + 3);
 		}
-		bitIntervalOutput(0, bs);
+//		longBsIntervalOutput(new BitSet[]{bs,bs});
 		System.out.println(bs.length());
-		System.out.println(bs.toString());
+//		System.out.println(bs.toString());
+		System.out.println((int)((ONE_32 +Integer.MAX_VALUE-2 )% Integer.MAX_VALUE));
 	}
 	
 	private static void bitIntervalOutput(long offset,BitSet bs){
@@ -46,6 +51,39 @@ public class BitSetSpace {
 			}
 		}
 		System.out.println("[" + (b-offset) + "," + (e-offset) + "]");
+	}
+	
+	private static void longBsIntervalOutput(BitSet[] bss){
+		long b = -1;
+		long e = b;
+		for (int bssi = 0; bssi < bss.length; bssi++) {
+			long offset=bssi*(long)Integer.MAX_VALUE;
+			for (int bsi = 0; bsi < bss[bssi].length(); bsi++) {
+				if (!bss[bssi].get(bsi)) {
+					if(b!=-1){
+						System.out.println("[" + (int)(b & ONE_32) + "," + (int)(e & ONE_32) + "]");
+						b=-1;
+					}
+				} else {
+					e = bsi+offset;
+					b=b==-1?bsi+offset:b;
+				}
+			}
+		}
+		if(b!=-1){
+			System.out.println("[" + (int)(b & ONE_32) + "," + (int)(e & ONE_32) + "]");
+		}
+	}
+	
+	private static void addIpInterval(BitSet[] bss, int bip, int eip) {
+		long lbip = bip & ONE_32;
+		long leip = eip & ONE_32;
+		while (lbip <= leip) {
+			int bssi = (int) (lbip / Integer.MAX_VALUE);
+			int bsi = (int) (lbip % Integer.MAX_VALUE);
+			bss[bssi].set(bsi);
+			lbip++;
+		}
 	}
 
 }
