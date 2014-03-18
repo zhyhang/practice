@@ -161,7 +161,7 @@ public class GeneralHashFunctionLibrary {
 
 	/* End Of FNV Hash Function */
 
-	public static long APHash(String str) {
+	public static long APHash(CharSequence str) {
 		long hash = 0xAAAAAAAA;
 
 		for (int i = 0; i < str.length(); i++) {

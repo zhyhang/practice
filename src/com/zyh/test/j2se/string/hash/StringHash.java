@@ -6,6 +6,7 @@ package com.zyh.test.j2se.string.hash;
  * and open the template in the editor.
  */
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +30,7 @@ public class StringHash {
 	public static void main(String... argv) {
 
 		// random generator string
-		int cnt = 100;
+		int cnt = 10000000;
 		int strLength = 22;
 		int dupCnt = 0;
 		long wholeTimeCost = 0;
@@ -51,10 +52,11 @@ public class StringHash {
 		int[] usingIndex = new int[strLength];
 		int lastIndex = strLength - 1;
 		HashSet<Long> dupHash = new HashSet<Long>((int) (cnt * 1.2));
-		// Map<Long, Integer> dupHash = new HashMap<>();
-		char[] csPrefix="CAESE".toCharArray();
-		char[] cs=Arrays.copyOf(csPrefix, strLength+csPrefix.length);
-		SingleString ss=new SingleString();
+		char[] csPrefix = "CAESE".toCharArray();
+		char[] cs = Arrays.copyOf(csPrefix, strLength + csPrefix.length);
+		SingleString ss = new SingleString();
+		LongExistVector posVec = new LongExistVector();
+		LongExistVector negVec = new LongExistVector();
 		for (int i = 0; i < cnt; i++) {
 			// range the chars at different positions
 			for (int j = lastIndex; j > 0; j--) {
@@ -69,37 +71,81 @@ public class StringHash {
 			}
 			usingIndex[lastIndex]++;
 			ss.setValue(cs);
-			System.out.println(cs);
+			// System.out.println(cs);
 			// record the time cost
-
 			long ts = System.nanoTime();
 			// calculate the string hash
 			long hash = GeneralHashFunctionLibrary.CSDNHash(ss);
-			// long hash = GeneralHashFunctionLibrary.APHash(s);
+			// long hash = GeneralHashFunctionLibrary.APHash(ss);
 			wholeTimeCost += System.nanoTime() - ts;
 			// System.out.println(hash);
-			/*
-			 * Integer sameHash = dupHash.get(hash); if (null != sameHash) {
-			 * sameHash++; dupCnt++; } else { sameHash = Integer.valueOf(1); }
-			 * dupHash.put(hash, sameHash);
-			 */
-			if (dupHash.contains(hash)) {
-				dupCnt++;
+			if (hash == -1751414433747795287l || hash == 7353919769594040621l
+					|| hash == -4293802507289426314l) {
+				System.out.println(ss);
+			}
+
+			// if (dupHash.contains(hash)) {
+			// dupCnt++;
+			// } else {
+			// dupHash.add(hash);
+			// }
+
+			if (hash < 0) {
+				if (negVec.add(hash)) {
+					dupCnt++;
+				}
 			} else {
-				dupHash.add(hash);
+				if (posVec.add(hash)) {
+					dupCnt++;
+				}
 			}
 
 		}
 		System.out.println("Hash collision counter: [" + dupCnt + "].");
-		System.out.println("Calculate [" + cnt + "] string hashcode,cost time (ms) : ["
+		System.out.println("Calculate [" + cnt
+				+ "] string hashcode,cost time (ms) : ["
 				+ TimeUnit.NANOSECONDS.toMillis(wholeTimeCost) + "].");
 
 	}
-	
-	public static class SingleString implements CharSequence{
-		
+
+	public static class LongExistVector {
+		private BitSet modBs0 = new BitSet(Integer.MAX_VALUE);
+		private BitSet modBs1 = new BitSet(Integer.MAX_VALUE);
+		private BitSet modBs2 = new BitSet();
+		private BitSet remainderBs = new BitSet(Integer.MAX_VALUE);
+
+		public boolean add(long value) {
+			int remainder = value < 0l ? (int) -(value % (-1l * Integer.MAX_VALUE))
+					: (int) (value % Integer.MAX_VALUE);
+			long mod = value < 0l ? (value / (-1l * Integer.MAX_VALUE)) : value
+					/ Integer.MAX_VALUE;
+			BitSet modBs = modBs0;
+			int modIndex = (int) mod;
+			if (mod >= Integer.MAX_VALUE * 2l) {
+				modBs = modBs2;
+				modIndex = (int) (mod - Integer.MAX_VALUE * 2l);
+			} else if (mod >= Integer.MAX_VALUE) {
+				modBs = modBs1;
+				modIndex = (int) (mod - Integer.MAX_VALUE);
+			}
+			boolean exists = remainderBs.get(remainder) && modBs.get(modIndex);
+			remainderBs.set(remainder);
+			modBs.set(modIndex);
+			if (exists) {
+				System.out.println(value);
+				System.out.println(remainder);
+				System.out.println(mod);
+				System.out.println(modIndex);
+				System.out.println();
+			}
+			return exists;
+		}
+	}
+
+	public static class SingleString implements CharSequence {
+
 		private char[] cs;
-		
+
 		@Override
 		public int length() {
 			return cs.length;
@@ -114,16 +160,16 @@ public class StringHash {
 		public CharSequence subSequence(int start, int end) {
 			return null;
 		}
-		
-		public void setValue(char[] cs){
-			this.cs=cs;
+
+		public void setValue(char[] cs) {
+			this.cs = cs;
 		}
-		
+
 		@Override
 		public String toString() {
 			return new String(cs);
 		}
-		
+
 	}
 
 }
