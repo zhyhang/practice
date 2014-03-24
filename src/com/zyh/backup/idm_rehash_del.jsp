@@ -21,18 +21,67 @@
 		String keyfilename = request.getParameter("kfname");
 		String keyFile = "/home/weiwei.wang/idm.clear/" + keyfilename;
 		String cmd = request.getParameter("cmd");
-		String redisxmlname=request.getParameter("rxname");
-		IRedisTemplate iredis = null;
 		String reservehash=request.getParameter("hash");
 		int hash=Integer.valueOf(reservehash);
+		String redisxmlname=null;
+		switch(hash){
+		case 0:
+			redisxmlname="idm.144.54.6379.xml";
+			break;
+		case 1:
+			redisxmlname="idm.144.54.6380.xml";
+			break;
+		case 2:
+			redisxmlname="idm.144.54.6381.xml";
+			break;
+		case 3:
+			redisxmlname="idm.144.54.6382.xml";
+			break;
+		case 4:
+			redisxmlname="idm.144.24.6379.xml";
+			break;
+		case 5:
+			redisxmlname="idm.144.24.6380.xml";
+			break;
+		case 6:
+			redisxmlname="idm.144.24.6381.xml";
+			break;
+		case 7:
+			redisxmlname="idm.144.24.6382.xml";
+			break;
+		case 8:
+			redisxmlname="idm.152.13.6379.xml";
+			break;
+		case 9:
+			redisxmlname="idm.152.13.6380.xml";
+			break;			
+		case 10:
+			redisxmlname="idm.152.13.6381.xml";
+			break;
+		case 11:
+			redisxmlname="idm.152.13.6382.xml";
+			break;
+		case 12:
+			redisxmlname="idm.152.11.6379.xml";
+			break;
+		case 13:
+			redisxmlname="idm.152.12.6380.xml";
+			break;
+		case 14:
+			redisxmlname="idm.144.56.6387.xml";
+			break;
+		case 15:
+			redisxmlname="idm.144.57.6387.xml";
+			break;			
+		}
+		IRedisTemplate iredis = new IRedisTemplate(new IRedisPool(new AutoShardingStrategyFactory(
+				"file:///home/weiwei.wang/idm.clear/"+redisxmlname)));
 		int nodenumber=16;
 		int printCount=0;
 	%>
 	<div>
 		<%
 			if ("start".equalsIgnoreCase(cmd)) {
-				iredis = new IRedisTemplate(new IRedisPool(new AutoShardingStrategyFactory(
-						"file://home/weiwei.wang/idm.clear/"+redisxmlname)));
 				if (!running.compareAndSet(-1, 0)) {
 					out.print("<span><font color='blue'>相同的程序正在执行，已经处理");
 					out.print(running.get());
@@ -54,7 +103,7 @@
 		<table>
 			<thead>
 				<tr>
-					<td><font color='blue'><b>程序正在运行，可刷新页面查看处理了多个个Key。</b></font></td>
+					<td><font color='blue'><b>程序正在运行，可刷新页面查看处理了多少个Key。</b></font></td>
 				</tr>
 			</thead>
 			<tbody>
@@ -73,12 +122,12 @@
 							if(printCount++<=100){
 								out.print(key+"<br>");
 							}else{
-								break;
+								out.flush();
 							}
 							try {
-								//if (iredis.del(key) == 1) {
-								//	running.incrementAndGet();
-								//}
+								if (iredis.del(key) == 1) {
+									running.incrementAndGet();
+								}
 							} catch (Exception e) {
 								//ignore
 							}
