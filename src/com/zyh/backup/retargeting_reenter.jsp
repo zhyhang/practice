@@ -1,3 +1,7 @@
+<%@page import="com.ipinyou.optimus.kernel.adv.processor.CvtRetargetingCacheProcessor"%>
+<%@page import="com.ipinyou.optimus.kernel.model.action.AdvConvert"%>
+<%@page import="com.ipinyou.optimus.kernel.model.User"%>
+<%@page import="com.ipinyou.optimus.kernel.model.action.AdvCommon"%>
 <%@page import="java.io.PrintWriter"%>
 <%@page import="com.ipinyou.iredis.strategy.factory.AutoShardingStrategyFactory"%>
 <%@page import="com.ipinyou.iredis.IRedisPool"%>
@@ -13,7 +17,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-<title>Retargeting Check</title>
+<title>Retargeting Re-Enter</title>
 </head>
 <%!static AtomicLong running = new AtomicLong(-1);
 	static long lastComplete = 0;%>
@@ -21,10 +25,12 @@
 	<%
 		String keyfilename = request.getParameter("kfname");
 		String keyFile = "/home/weiwei.wang/retargeting/" + keyfilename;
-		String noExistsFile = "/home/weiwei.wang/retargeting/" + keyfilename+".noexists";
 		String cmd = request.getParameter("cmd");
 		IRedisTemplate iredis = new IRedisTemplate(new IRedisPool(new AutoShardingStrategyFactory(
 				"http://192.168.144.122:7000/iredis/config/retargeting.xml")));
+		WebApplicationContext wac = (WebApplicationContext) application
+				.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
+		CvtRetargetingCacheProcessor prc= wac.getBean("cvtRetargetingCacheProcessor", CvtRetargetingCacheProcessor.class);
 		int printCount=0;
 	%>
 	<div>
@@ -58,18 +64,21 @@
 				<%
 					try {
 						Scanner scanner = new Scanner(new File(keyFile));
-						PrintWriter fwriter=new PrintWriter(new File(noExistsFile));
 						while (scanner.hasNextLine()) {
 							String entry = scanner.nextLine();
 							running.incrementAndGet();
 							if (entry == null || entry.isEmpty()) {
 								continue;
 							}
-							String key = "rgtz:"+entry.trim();
+							String key = entry.trim();
+							AdvConvert action=new AdvConvert();
+							User user=new User();
+							user.setId(key);
+							action.setUser(user);
+							action.setAdvertiserCid(1095L);
+							action.setTargetType(396L);
 							try{
-								if(!iredis.exists(key)){
-									fwriter.println(key);
-								}
+								prc.process(action);
 							}catch(Exception e){
 								//ignore
 							}
@@ -80,7 +89,6 @@
 							}
 						}
 						scanner.close();
-						fwriter.close();
 					} finally {
 						lastComplete = running.get();
 						running.set(-1);
