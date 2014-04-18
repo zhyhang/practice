@@ -23,5 +23,7 @@ public class Hash {
 		System.out.println(newD);
 		
 		System.out.println("test end");//OK
+		
+		System.out.println(-1l * Integer.MAX_VALUE);
 	}
 }
