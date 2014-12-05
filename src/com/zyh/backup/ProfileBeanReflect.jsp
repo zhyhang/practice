@@ -80,6 +80,30 @@ a {
 			out.println("<td>absentMap.size()</td>");
 			out.println("<td>"+timemap.size()+"</td>");
 			out.println("</tr>");
+			field=clazz.getDeclaredField("recommendProductNosMapGetCount");
+			field.setAccessible(true);
+			count=(int)field.getInt(bean);
+			out.println("<td>recommendProductNosMapGetCount</td>");
+			out.println("<td>"+count+"</td>");
+			out.println("</tr>");
+			field=clazz.getDeclaredField("recommendProductNosMap");
+			field.setAccessible(true);
+			Map<String, TimeObject<String[]>> timemaps=(Map<String, TimeObject<String[]>>)field.get(bean);
+			out.println("<td>recommendProductNosMap.size()</td>");
+			out.println("<td>"+timemaps.size()+"</td>");
+			out.println("</tr>");
+			field=clazz.getDeclaredField("productAlgoExtendInfoMapGetCount");
+			field.setAccessible(true);
+			count=(int)field.getInt(bean);
+			out.println("<td>productAlgoExtendInfoMapGetCount</td>");
+			out.println("<td>"+count+"</td>");
+			out.println("</tr>");
+			field=clazz.getDeclaredField("productAlgoExtendInfoMap");
+			field.setAccessible(true);
+			Map<String, TimeObject<Map<String, String>>> timemapmap=(Map<String, TimeObject<Map<String, String>>>)field.get(bean);
+			out.println("<td>productAlgoExtendInfoMap.size()</td>");
+			out.println("<td>"+timemapmap.size()+"</td>");
+			out.println("</tr>");
 			%>
 		</tbody>
 	</table>
