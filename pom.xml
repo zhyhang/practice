@@ -43,5 +43,10 @@
 			<artifactId>commons-lang3</artifactId>
 			<version>3.3.2</version>
 		</dependency>
+		<dependency>
+		  <groupId>net.jodah</groupId>
+		  <artifactId>expiringmap</artifactId>
+		  <version>0.4.0</version>
+		</dependency>		
 	</dependencies>
 </project>
