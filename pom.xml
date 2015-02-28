@@ -18,6 +18,28 @@
 		</plugins>
 	</build>
 	<dependencies>
+		<!-- local dependencies -->
+		<dependency>
+			<groupId>com.local</groupId>
+			<artifactId>groovy-all</artifactId>
+			<version>1.0</version>
+			 <scope>system</scope>
+			 <systemPath>${basedir}/lib/groovy-all-2.1.8-indy.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>com.local</groupId>
+			<artifactId>jython</artifactId>
+			<version>1.0</version>
+			 <scope>system</scope>
+			 <systemPath>${basedir}/lib/jython-2.5.3.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>com.local</groupId>
+			<artifactId>overseer</artifactId>
+			<version>1.0</version>
+			 <scope>system</scope>
+			 <systemPath>${basedir}/lib/overseer.jar</systemPath>
+		</dependency>		
 		<dependency>
 			<groupId>io.undertow</groupId>
 			<artifactId>undertow-core</artifactId>
