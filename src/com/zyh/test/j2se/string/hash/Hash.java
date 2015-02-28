@@ -6,10 +6,10 @@ import java.text.NumberFormat;
 public class Hash {
 	public static void main(String[] args) {
 		String str = "Java Programming Language";
-		System.out.println(str + " hashCode(): " + str.hashCode() + " new Java 7 hashCode used by collections: "
-				+ sun.misc.Hashing.stringHash32(str));
-		System.out.println(str + " hashCode(): " + str.hashCode() + " new Java 7 hashCode used by collections: "
-				+ sun.misc.Hashing.stringHash32(str));
+//		System.out.println(str + " hashCode(): " + str.hashCode() + " new Java 7 hashCode used by collections: "
+//				+ sun.misc.Hashing.stringHash32(str));
+//		System.out.println(str + " hashCode(): " + str.hashCode() + " new Java 7 hashCode used by collections: "
+//				+ sun.misc.Hashing.stringHash32(str));
 		double d=12222222222.11111111d;
 		BigDecimal bd=new BigDecimal(d);
 //		bd=bd.setScale(3, BigDecimal.ROUND_HALF_UP);
