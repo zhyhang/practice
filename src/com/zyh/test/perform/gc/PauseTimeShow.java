@@ -6,7 +6,7 @@ package com.zyh.test.perform.gc;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 展示Gc的暂停时间
+ * Show gc pause effect on application response
  * 
  * @author zhyhang
  *
@@ -21,29 +21,53 @@ public class PauseTimeShow {
 
 	private static long timecostMin = Long.MAX_VALUE;
 
+	private static long temp;
+
 	static {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				if (counter.longValue() == 0) {
+					return;
+				}
 				print();
+				System.out.println();
 			}
 
 		});
 	}
 
 	public static void main(String[] argv) {
-		byte[] bsStatic = new byte[1024 * 1024 * 500];
+		if (argv.length < 1 || !argv[0].equals("-gc") && !argv[0].equals("-nogc")) {
+			System.out.println("Usage:\n\tjava\t" + PauseTimeShow.class.getSimpleName() + "\t-gc/-nogc");
+			System.exit(1);
+		}
+		final boolean isGc = argv[0].equals("-gc");
+		// create a thread making garbage
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				int size = 1024 * 1024 * 500;
+				byte[] bsStatic = new byte[size];
+				while (true) {
+					// allocate big data
+					byte[] bs = null;
+					if (isGc) {
+						bs = new byte[size];
+					} else {
+						bs = bsStatic;
+					}
+					temp = bs.length;
+				}
+			}
+		}).start();
 		while (true) {
 			long ts = System.currentTimeMillis();
-			// reuse
-			// byte[] bs = bsStatic;
-			// allocate big data
-			byte[] bs = new byte[1024 * 1024 * 500];
-			for (int i = 0; i < bs.length; i++) {
-				bs[i] = (byte) i;
+			long sum = 0;
+			for (int i = 0; i < 800000000; i++) {
+				sum++;
 			}
-			// release
-			bs = null;
+			temp = sum;
 			long timecost = System.currentTimeMillis() - ts;
 			counter.incrementAndGet();
 			timecostTotal.addAndGet(timecost);
@@ -54,12 +78,13 @@ public class PauseTimeShow {
 				timecostMin = timecost;
 			}
 			print();
-			System.out.print(timecost);
+			System.out.format("CurrentTimeCost[%d]", timecost);
 		}
 	}
 
 	private static void print() {
 		System.out.println();
+		System.out.format("[%1$tY%1$tm%1$td%1$tH%1$tM%1$tS,%1$tL]", System.currentTimeMillis());
 		System.out.format(
 				"Counter[%d]TotalTime[%d]AvgTime[%d]MaxTime[%d]Mintime[%d](unit:ms)",
 				counter.longValue(),
