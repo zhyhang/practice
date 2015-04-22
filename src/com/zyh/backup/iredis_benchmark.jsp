@@ -21,7 +21,10 @@
 <%!static AtomicLong running = new AtomicLong(-1);
 	static AtomicLong timecost = new AtomicLong(0);
 	static AtomicLong errors = new AtomicLong(0);
+	final static int maxThreads = 10;
+	static AtomicLong runThreads = new AtomicLong(-1);
 	static long startTime = 0;
+	static long endTime = 0;
 	static boolean stop = true;
 	static IRedisTemplate iredis = new IRedisTemplate(new IRedisPool(new AutoShardingStrategyFactory(
 			"file:///home/weiwei.wang/iredis/iredis.xml")));%>
@@ -30,33 +33,39 @@
 		out.print("<span><font color='blue'>程序正在执行，已经处理");
 		out.print(running.get());
 		out.print("次请求，平均QPS：");
-		out.print(running.longValue() * 1000 / (System.currentTimeMillis() - startTime));
+		long tse = endTime > 0 ? endTime : System.currentTimeMillis();
+		out.print(running.longValue() * 1000 / (tse - startTime));
 		out.print("，平均延时：");
 		out.print(TimeUnit.NANOSECONDS.toMicros(timecost.longValue() / running.longValue()));
-		out.print("微秒，错误次数：");
+		out.print("微秒/次，错误次数：");
 		out.print(errors.longValue());
 		out.println("。</font></span>");
 	}%>
 <body>
 	<%
 		String cmd = request.getParameter("cmd");
-		int printCount = 0;
 	%>
 	<div>
 		<%
 			if ("start".equalsIgnoreCase(cmd)) {
-				if (!stop) {
+				if (runThreads.longValue() >= maxThreads) {
 					printInfo(out);
 					return;
 				}
-				stop = false;
-				startTime = System.currentTimeMillis();
-				running.set(-1);
-				timecost.set(0);
-				errors.set(0);
+				if (runThreads.compareAndSet(-1, 0)) {
+					stop = false;
+					startTime = System.currentTimeMillis();
+					endTime = 0;
+					running.set(-1);
+					timecost.set(0);
+					errors.set(0);
+				}
+				runThreads.incrementAndGet();
 			} else if ("stop".equalsIgnoreCase(cmd)) {
 				if (!stop) {
 					stop = true;
+					endTime = System.currentTimeMillis();
+					runThreads.set(-1);
 					printInfo(out);
 				}
 				return;
@@ -76,7 +85,7 @@
 					while (!stop) {
 						long tsb = System.nanoTime();
 						try {
-							iredis.zrevrange("test1", 0, 199);
+							iredis.zrevrange("test1", 0, 19);
 						} catch (Exception ignore) {
 							errors.incrementAndGet();
 							return;
