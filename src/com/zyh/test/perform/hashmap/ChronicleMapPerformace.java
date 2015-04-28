@@ -5,6 +5,7 @@ package com.zyh.test.perform.hashmap;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
@@ -54,16 +55,16 @@ public class ChronicleMapPerformace {
 				.getValue().getAccessCounter(), cm_128.entrySet().iterator().next().getValue().getAccessCounter(),
 				cm_640.entrySet().iterator().next().getValue().getAccessCounter(), cm_1.entrySet().iterator().next()
 						.getValue().getAccessCounter());
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < 3; i++) {
 			tsb = System.currentTimeMillis();
-			readMap(cm);
-			readMap(cm_128);
-			readMap(cm_640);
-			readMap(cm_1);
+			readMap(cm, ExpiringVo48.INFO_SIZE);
+			readMap(cm_128, ExpiringVo128.INFO_SIZE);
+			readMap(cm_640, ExpiringVo640.INFO_SIZE);
+			readMap(cm_1, ExpiringVo1.INFO_SIZE);
 			System.out.format("%d readMap cost: %dms.\n", i + 1, System.currentTimeMillis() - tsb);
-			Thread.sleep(10000);
+//			Thread.sleep(15000);
 		}
-		Thread.sleep(10000);
+//		Thread.sleep(30000);
 	}
 
 	private static <T extends ExpiringVo> ChronicleMap<String, T> initMap(String fileName, Class<T> valueClazz,
@@ -97,17 +98,18 @@ public class ChronicleMapPerformace {
 		}
 	}
 
-	private static <T extends ExpiringVo> void readMap(ChronicleMap<String, T> rcm) {
+	private static <T extends ExpiringVo> void readMap(ChronicleMap<String, T> rcm,int infoSize) {
 		// System.out.println(rcm.get("u_**********_**********_**********_8888"));
-		for (String key : rcm.keySet()) {
+		for (Map.Entry<String, T> entry:rcm.entrySet()) {
 			// T usingVo = rcm.newValueInstance();
-			ExpiringVo vo = rcm.get(key);// rcm.getUsing(entry.getKey(),
+			T vo = entry.getValue();//rcm.get(key);// rcm.getUsing(entry.getKey(),
 											// usingVo);
 			int counter = vo.getAccessCounter();
 			counter = counter < Integer.MAX_VALUE ? counter + 1 : counter;
 			vo.setAccessCounter(counter);
 			vo.setTime(vo.getTime() + 1);
-			vo.getInfo();
+//			vo.getInfo();
+			vo.getUsingInfo(new StringBuilder(infoSize));
 		}
 		// for (String key:rcm.keySet()) {
 		// rcm.get("no exists");
@@ -131,6 +133,8 @@ public class ChronicleMapPerformace {
 		String getInfo();
 
 		void setInfo(@MaxSize(48) String info);
+		
+		StringBuilder getUsingInfo(StringBuilder stringBuilder);
 	}
 
 	public static interface ExpiringVo1 extends ExpiringVo {
