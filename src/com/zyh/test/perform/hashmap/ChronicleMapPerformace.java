@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +63,7 @@ public class ChronicleMapPerformace {
 //		hmMemFootprint(); // 1000 * 1000 entries = 300M memory
 		cmConcurrentPerform();
 		hmConcurrentPerform();
+		new Thread(()->System.out.println("lambda in java8!")).start();
 	}
 	
 	private static void cmPerform() throws InterruptedException{
@@ -101,7 +101,7 @@ public class ChronicleMapPerformace {
 	}
 	
 	private static void hmMemFootprint() throws InterruptedException{
-		hm=new HashMap<>();
+		hm=new ConcurrentHashMap<>();
 		int size = 1000 * 1000 ;
 		fillMap(hm, 48, size);
 		System.gc();
