@@ -40,15 +40,17 @@
 			<scope>system</scope>
 			<systemPath>${basedir}/lib/overseer.jar</systemPath>
 		</dependency>
+		<!-- 
 		<dependency>
 			<groupId>io.undertow</groupId>
 			<artifactId>undertow-core</artifactId>
-			<version>1.0.0.Beta26</version>
+			<version>1.2.6.Final</version>
 		</dependency>
+		 -->
 		<dependency>
 			<groupId>io.undertow</groupId>
 			<artifactId>undertow-servlet</artifactId>
-			<version>1.0.0.Beta26</version>
+			<version>1.2.6.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>net.openhft</groupId>
@@ -145,5 +147,10 @@
 			<artifactId>lz4</artifactId>
 			<version>1.3.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-pool2</artifactId>
+			<version>2.3</version>
+		</dependency>		
 	</dependencies>
 </project>
