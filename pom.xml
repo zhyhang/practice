@@ -40,13 +40,8 @@
 			<scope>system</scope>
 			<systemPath>${basedir}/lib/overseer.jar</systemPath>
 		</dependency>
-		<!-- 
-		<dependency>
-			<groupId>io.undertow</groupId>
-			<artifactId>undertow-core</artifactId>
-			<version>1.2.6.Final</version>
-		</dependency>
-		 -->
+		<!-- <dependency> <groupId>io.undertow</groupId> <artifactId>undertow-core</artifactId> 
+			<version>1.2.6.Final</version> </dependency> -->
 		<dependency>
 			<groupId>io.undertow</groupId>
 			<artifactId>undertow-servlet</artifactId>
@@ -151,6 +146,11 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-pool2</artifactId>
 			<version>2.3</version>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>nf.fr.eraasoft</groupId>
+			<artifactId>objectpool</artifactId>
+			<version>1.1.2</version>
+		</dependency>
 	</dependencies>
 </project>
