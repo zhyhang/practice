@@ -12,13 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -34,13 +32,9 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
  */
 public class SnBiApiRequest {
 
-	private final static String DATA_FILE = "sn_bi.xml";
-
-	private final static int POOL_SIZE = 200;
+	private final static int POOL_SIZE = 500;
 
 	private static List<String> mockDatas = new ArrayList<String>();
-
-	private static LinkedTransferQueue<HttpClient> clientPool = new LinkedTransferQueue<HttpClient>();
 
 	private static ScheduledExecutorService ses = Executors.newScheduledThreadPool(POOL_SIZE);
 
@@ -53,18 +47,16 @@ public class SnBiApiRequest {
 	private static CloseableHttpClient client = null;
 
 	public static void main(String[] args) {
+		// check arguments
+		if (args == null || args.length < 3) {
+			Usage();
+			System.exit(-1);
+		}
 
 		// read mock data from files
-		try (Stream<String> stream = Files.lines(Paths.get(DATA_FILE))) {
+		try (Stream<String> stream = Files.lines(Paths.get(args[2]))) {
 			stream.forEach(line -> mockDatas.add(line));
 		} catch (Exception e) {
-		}
-		// init client pool
-		for (int i = 0; i < POOL_SIZE; i++) {
-			clientPool.add(HttpClients
-					.custom()
-					.setDefaultRequestConfig(
-							RequestConfig.custom().setSocketTimeout(500).setConnectTimeout(1000).build()).build());
 		}
 		// init http client
 		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
@@ -95,12 +87,8 @@ public class SnBiApiRequest {
 				}, 1, 1, TimeUnit.SECONDS);
 
 		// mock http post
-		int qps = 100;
-		if (args != null && args.length > 0) {
-			qps = Integer.parseInt(args[0]);
-		}
+		int qps = Integer.parseInt(args[0]);
 		qps = qps < 1 ? 100 : qps;
-
 		int reqPer10ms = qps / 100;
 		int reqPer100ms = (qps - reqPer10ms * 100) / 10;
 		int reqPerSecond = qps % 10;
@@ -108,13 +96,13 @@ public class SnBiApiRequest {
 		while (true) {
 			long tsb = System.nanoTime();
 			if (reqPer10ms > 0) {
-				scheduleQps(10, 100, reqPer10ms);
+				scheduleQps(10, 100, reqPer10ms, args[1]);
 			}
 			if (reqPer100ms > 0) {
-				scheduleQps(100, 10, reqPer100ms);
+				scheduleQps(100, 10, reqPer100ms, args[1]);
 			}
 			if (reqPerSecond > 0) {
-				scheduleQps(1000, 1, reqPerSecond);
+				scheduleQps(1000, 1, reqPerSecond, args[1]);
 			}
 			long timeElapse = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - tsb);
 			if (timeElapse < TimeUnit.SECONDS.toMicros(1)) {
@@ -125,36 +113,40 @@ public class SnBiApiRequest {
 				}
 			}
 		}
-
 	}
 
-	private static void scheduleQps(int timePerSegment, int segments, int qpsPerSegment) {
+	private static void scheduleQps(int timePerSegment, int segments, int qpsPerSegment, String api) {
 		for (int i = 0; i < segments; i++) {
 			for (int j = 0; j < qpsPerSegment; j++) {
-				ses.schedule(
-						() -> {
-							if (mockDatas.isEmpty()) {
-								return;
-							}
-							int index = new Random().nextInt(mockDatas.size());
-							String requestData = mockDatas.get(index);
-							if (null == requestData || requestData.trim().isEmpty()) {
-								return;
-							}
-							StringEntity entity = new StringEntity(requestData, StandardCharsets.UTF_8);
-							HttpPost post = new HttpPost(
-									"http://192.168.152.220:9901/openapi/customized/bi/suning/m/c3VuaW5n");
-							post.setEntity(entity);
-							try (CloseableHttpResponse response = client.execute(post, HttpClientContext.create());) {
-								if (response.getEntity() != null && response.getEntity().getContent() != null) {
-									response.getEntity().getContent().close(); // release connect
-								}
-								requestCount.incrementAndGet();
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-						}, i * timePerSegment, TimeUnit.MILLISECONDS);
+				ses.schedule(() -> {
+					if (mockDatas.isEmpty()) {
+						return;
+					}
+					int index = new Random().nextInt(mockDatas.size());
+					String requestData = mockDatas.get(index);
+					if (null == requestData || requestData.trim().isEmpty()) {
+						return;
+					}
+					StringEntity entity = new StringEntity(requestData, StandardCharsets.UTF_8);
+					HttpPost post = new HttpPost(api);
+					post.setEntity(entity);
+					try (CloseableHttpResponse response = client.execute(post, HttpClientContext.create());) {
+						if (response.getEntity() != null && response.getEntity().getContent() != null) {
+							response.getEntity().getContent().close(); // release connect
+					}
+					requestCount.incrementAndGet();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}, i * timePerSegment, TimeUnit.MILLISECONDS);
 			}
 		}
+	}
+
+	private static void Usage() {
+		System.err.println(SnBiApiRequest.class.getCanonicalName() + " <qps> <api_url> <mock_data file>");
+		System.err.println("for example:");
+		System.err.println("\t" + SnBiApiRequest.class.getCanonicalName()
+				+ " 200 http://192.168.152.220:9901/openapi/customized/bi/suning/m/c3VuaW5n sn_bi.xml");
 	}
 }
