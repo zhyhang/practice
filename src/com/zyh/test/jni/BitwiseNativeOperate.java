@@ -30,7 +30,7 @@ public class BitwiseNativeOperate {
 		Arrays.setAll(al, i -> i + 1);
 		Arrays.setAll(bl, i -> i + 2);
 		// warm up
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 20; i++) {
 			System.out.println(print_var_addr(al, bl));
 		}
 		long tsb = System.nanoTime();
@@ -41,7 +41,7 @@ public class BitwiseNativeOperate {
 		Arrays.setAll(al, i -> i + 1);
 		Arrays.setAll(bl, i -> i + 2);
 		// warm up
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 20; i++) {
 			System.out.println(union(al, bl));
 		}
 		tsb = System.nanoTime();
@@ -60,8 +60,8 @@ public class BitwiseNativeOperate {
 		long tsb = System.nanoTime();
 		for (int i = 0; i < 10000; i++) {
 			es.execute(()->{
-//				print_var_addr(al,bl);
-				union(al,bl);
+				print_var_addr(al,bl);
+//				union(al,bl);
 			});
 		}
 		es.shutdown();
@@ -76,14 +76,12 @@ public class BitwiseNativeOperate {
 	public static native long print_var_addr(long[] al, long[] bl);
 
 	public static long union(long[] al, long bl[]) {
-		int c = 0;
 		for (int j = 0; j < LOOP_COUNT; j++) {
 			for (int i = 0; i < al.length; i++) {
 				al[i] |= bl[i];
-				c++;
 			}
 		}
-		return c;
+		return 0;
 	}
 
 }
