@@ -10,6 +10,17 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author zhyhang
+ * enable compilation trace
+ * <pre>
+ *-server
+ *-XX:+UnlockDiagnosticVMOptions
+ *-XX:+TraceClassLoading
+ *-XX:+PrintAssembly
+ *-XX:+LogCompilation
+ *-XX:+UnlockDiagnosticVMOptions
+ *-XX:+TraceClassLoading
+ *-XX:+LogCompilation
+ *</pre>
  *
  */
 public class BitwiseNativeOperate {
@@ -30,8 +41,8 @@ public class BitwiseNativeOperate {
 		Arrays.setAll(al, i -> i + 1);
 		Arrays.setAll(bl, i -> i + 2);
 		// warm up
-		for (int i = 0; i < 20; i++) {
-			System.out.println(print_var_addr(al, bl));
+		for (int i = 0; i < 1000; i++) {
+			print_var_addr(al, bl);
 		}
 		long tsb = System.nanoTime();
 		print_var_addr(al, bl);
@@ -41,14 +52,14 @@ public class BitwiseNativeOperate {
 		Arrays.setAll(al, i -> i + 1);
 		Arrays.setAll(bl, i -> i + 2);
 		// warm up
-		for (int i = 0; i < 20; i++) {
-			System.out.println(union(al, bl));
+		for (int i = 0; i < 1000; i++) {
+			union(al, bl);
 		}
 		tsb = System.nanoTime();
 		union(al, bl);
 		System.out.printf("union_java [%d]ns.\n", System.nanoTime() - tsb);
 		
-		parallel(al, bl);
+//		parallel(al, bl);
 
 //		System.out.println(Arrays.toString(al));
 //		System.out.println(Arrays.toString(bl));
