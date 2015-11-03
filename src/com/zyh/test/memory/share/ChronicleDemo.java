@@ -1,9 +1,9 @@
 package com.zyh.test.memory.share;
 
-import java.io.File;
+//import java.io.File;
 import java.io.IOException;
 
-import net.openhft.chronicle.tools.ChronicleTools;
+//import net.openhft.chronicle.tools.ChronicleTools;
 
 /**
  * 高性能缓存框架测试Java-Chronicle<br>
@@ -19,6 +19,7 @@ public class ChronicleDemo {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
+		/*
 		final String basePath = System.getProperty("java.io.tmpdir") + File.separator + "test";
 		ChronicleTools.deleteOnExit(basePath);
 		final int[] consolidates = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
