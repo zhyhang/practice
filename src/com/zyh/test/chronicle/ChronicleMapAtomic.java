@@ -22,6 +22,7 @@ public class ChronicleMapAtomic {
 	public static void main(String[] argv) throws Exception {
 		// a openhft longvalue map
 		File f = File.createTempFile("chronicle-map-atomic-test-longvalue.", ".data");
+		f.deleteOnExit();
 		Long key = Long.valueOf(19);
 		ChronicleMap<Long, LongValue> map = ChronicleMapBuilder.of(Long.class, LongValue.class).entries(100)
 				.lockTimeOut(500, TimeUnit.MILLISECONDS).createPersistedTo(f);
@@ -36,19 +37,20 @@ public class ChronicleMapAtomic {
 
 		// a aggregation of longvalue map
 		f = File.createTempFile("chronicle-map-atomic-test-longvalues.", ".data");
-		ChronicleMap<Long, StatsValues> map1 = ChronicleMapBuilder.of(Long.class, StatsValues.class).entries(30000)
+		f.deleteOnExit();
+		ChronicleMap<String, StatsValues> map1 = ChronicleMapBuilder.of(String.class, StatsValues.class).entries(30000)
 				.lockTimeOut(500, TimeUnit.MILLISECONDS).createPersistedTo(f);
 		StatsValues sv = DataValueClasses.newDirectInstance(StatsValues.class);
 		sv.setStats1(DataValueClasses.newDirectInstance(LongValue.class));
 		sv.setStats2(DataValueClasses.newDirectInstance(LongValue.class));
-		map1.put(key, sv);
-		StatsValues svu = map1.get(key);
+		map1.put(key.toString(), sv);
+		StatsValues svu = map1.get(key.toString());
 		svu.getStats1().addAtomicValue(100);
 		svu.getStats2().addAtomicValue(200);
 		map1.close();
-		map1 = ChronicleMapBuilder.of(Long.class, StatsValues.class).entries(30000)
+		map1 = ChronicleMapBuilder.of(String.class, StatsValues.class).entries(30000)
 				.lockTimeOut(500, TimeUnit.MILLISECONDS).createPersistedTo(f);
-		StatsValues sv1 = map1.get(key);
+		StatsValues sv1 = map1.get(key.toString());
 		System.out.format("stats value[%d,%d] after add atomic[%d,%d]\n", sv.getStats1().getValue(),
 				sv.getStats2().getValue(), sv1.getStats1().getValue(), sv1.getStats2().getValue());
 		map1.close();
