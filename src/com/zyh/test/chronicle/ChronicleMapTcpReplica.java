@@ -148,7 +148,7 @@ public class ChronicleMapTcpReplica {
 		logger.info("increasing-end, ts[{}].",System.currentTimeMillis());
 		long ts=System.currentTimeMillis();
 		AtomicBoolean isOver= new AtomicBoolean(false);
-		while(!isOver.get() && System.currentTimeMillis() - ts < TimeUnit.SECONDS.toMillis(60)){
+		while(!isOver.get() && System.currentTimeMillis() - ts < TimeUnit.SECONDS.toMillis(120)){
 			isOver.set(true);;
 			map.forEach((k,v)->{
 				if(v.getValue()!=totalAdd+VALUE_INIT){
