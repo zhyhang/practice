@@ -86,11 +86,23 @@ public class DualMasterMapService {
 			return;
 		}
 		counter.incrementAndGet();
-		deltaThrhds.forEach(this::addMapValue);
+		long tsb = System.nanoTime();
+		deltaThrhds.entrySet().parallelStream().forEach(this::addEntryValue);
+		timeCost[0].addAndGet(System.nanoTime() - tsb);
+		tsb = System.nanoTime();
+		deltaThrhds.entrySet().parallelStream().forEach(this::addBenchEntryValue);
+		timeCost[1].addAndGet(System.nanoTime() - tsb);
+	}
+
+	private void addEntryValue(Map.Entry<String, AdThreshold> e) {
+		addMapValue(e.getKey(), e.getValue());
+	}
+
+	private void addBenchEntryValue(Map.Entry<String, AdThreshold> e) {
+		addBenchMapValue(e.getKey(), e.getValue());
 	}
 
 	private void addMapValue(String id, AdThreshold delta) {
-		long tsb = System.nanoTime();
 		try {
 			AdThreshold threshold = map.computeIfAbsent(id, k -> map.newValueInstance());
 			threshold.addAtomicTodayCost(delta.getTodayCost());
@@ -101,17 +113,13 @@ public class DualMasterMapService {
 		} catch (Exception e) {
 			LOGGER.error("chronicle-map add error:", e);
 		}
-		timeCost[0].addAndGet(System.nanoTime() - tsb);
-		addBenchMapValue(id, delta);
 	}
 
 	private void addBenchMapValue(String id, AdThreshold delta) {
-		long tsb = System.nanoTime();
 		AtomicLong[] threshold = benchMap.computeIfAbsent(id,
 				k -> new AtomicLong[] { new AtomicLong(0), new AtomicLong(0) });
 		threshold[0].addAndGet(delta.getTotalCost());
 		threshold[1].addAndGet(delta.getTodayCost());
-		timeCost[1].addAndGet(System.nanoTime() - tsb);
 	}
 
 	private void printMap() {
@@ -138,7 +146,7 @@ public class DualMasterMapService {
 			String[] idDeltas = idDeltasStr == null ? new String[0] : idDeltasStr.split(",");
 			for (String idDelta : idDeltas) {
 				String[] splitIdDelta = idDelta.split("_");
-				AdThreshold threshold = map.newValueInstance();
+				AdThreshold threshold = new AdThresholdImp();// must not use map.newValueInstance()
 				threshold.setTotalCost(Long.parseLong(splitIdDelta[1]));
 				threshold.setTodayCost(Long.parseLong(splitIdDelta[2]));
 				deltaMap.put(splitIdDelta[0], threshold);
@@ -163,13 +171,13 @@ public class DualMasterMapService {
 			LOGGER.error("handle-print error:", e);
 		}
 	}
-	
+
 	private void handleStop(com.sun.net.httpserver.HttpExchange xchg) {
 		try {
 			ses.execute(this::printMap);
 			ses.shutdown();
 			ses.awaitTermination(5, TimeUnit.MINUTES);
-			byte[] output="service has stopped".getBytes();
+			byte[] output = "service has stopped".getBytes();
 			xchg.sendResponseHeaders(HttpURLConnection.HTTP_OK, output.length);
 			OutputStream os = xchg.getResponseBody();
 			os.write(output);
@@ -226,6 +234,43 @@ public class DualMasterMapService {
 		void setTodayCost(long value);
 
 		long addAtomicTodayCost(long delta);
+	}
+	
+	public static class AdThresholdImp implements AdThreshold {
+		
+		private long total;
+		
+		private long today;
+
+		@Override
+		public long getTotalCost() {
+			return total;
+		}
+
+		@Override
+		public void setTotalCost(long value) {
+			this.total=value;
+		}
+
+		@Override
+		public long addAtomicTotalCost(long delta) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long getTodayCost() {
+			return today;
+		}
+
+		@Override
+		public void setTodayCost(long value) {
+			this.today=value;
+		}
+
+		@Override
+		public long addAtomicTodayCost(long delta) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 }
