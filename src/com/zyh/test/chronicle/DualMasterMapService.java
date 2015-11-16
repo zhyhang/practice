@@ -107,9 +107,9 @@ public class DualMasterMapService {
 			AdThreshold threshold = map.computeIfAbsent(id, k -> map.newValueInstance());
 			threshold.addAtomicTodayCost(delta.getTodayCost());
 			threshold.addAtomicTotalCost(delta.getTotalCost());
-			synchronized (id) {
-				map.update(id, threshold); // trigger replication
-			}
+			map.update(id, threshold); // trigger replication
+		} catch (IllegalStateException e) {
+			// ignore
 		} catch (Exception e) {
 			LOGGER.error("chronicle-map add error:", e);
 		}
@@ -146,7 +146,8 @@ public class DualMasterMapService {
 			String[] idDeltas = idDeltasStr == null ? new String[0] : idDeltasStr.split(",");
 			for (String idDelta : idDeltas) {
 				String[] splitIdDelta = idDelta.split("_");
-				AdThreshold threshold = new AdThresholdImp();// must not use map.newValueInstance()
+				AdThreshold threshold = new AdThresholdImp();// must not use
+																// map.newValueInstance()
 				threshold.setTotalCost(Long.parseLong(splitIdDelta[1]));
 				threshold.setTodayCost(Long.parseLong(splitIdDelta[2]));
 				deltaMap.put(splitIdDelta[0], threshold);
@@ -235,11 +236,11 @@ public class DualMasterMapService {
 
 		long addAtomicTodayCost(long delta);
 	}
-	
+
 	public static class AdThresholdImp implements AdThreshold {
-		
+
 		private long total;
-		
+
 		private long today;
 
 		@Override
@@ -249,7 +250,7 @@ public class DualMasterMapService {
 
 		@Override
 		public void setTotalCost(long value) {
-			this.total=value;
+			this.total = value;
 		}
 
 		@Override
@@ -264,7 +265,7 @@ public class DualMasterMapService {
 
 		@Override
 		public void setTodayCost(long value) {
-			this.today=value;
+			this.today = value;
 		}
 
 		@Override
