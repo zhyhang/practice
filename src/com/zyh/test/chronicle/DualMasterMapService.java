@@ -29,6 +29,8 @@ import com.zyh.test.utils.JdkHttpServerUtil;
 import net.openhft.chronicle.hash.replication.TcpTransportAndNetworkConfig;
 import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
+import net.openhft.chronicle.map.WriteContext;
+import net.openhft.lang.model.DataValueClasses;
 
 /**
  * double chronicle map replication, receiving remote put data<br>
@@ -52,7 +54,7 @@ public class DualMasterMapService {
 
 	private final static transient Logger LOGGER = LoggerFactory.getLogger(DualMasterMapService.class);
 
-	private ChronicleMap<String, AdThreshold> map;
+	private final ChronicleMap<String, AdThreshold> map;
 
 	private final ConcurrentMap<String, AtomicLong[]> benchMap = new ConcurrentHashMap<>();
 
@@ -61,23 +63,26 @@ public class DualMasterMapService {
 	private final AtomicLong[] timeCost = new AtomicLong[] { new AtomicLong(0), new AtomicLong(0) };
 
 	private final ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
-
-	private DualMasterMapService(String remoteHost, int port, byte identifier) {
-		try {
-			File f = new File(STORAGE_FILE);
-			if (f.exists()) {
-				f.delete();
-			}
-			f.deleteOnExit();
-			TcpTransportAndNetworkConfig tcpConfig = TcpTransportAndNetworkConfig
-					.of(port, new InetSocketAddress(remoteHost, port)).heartBeatInterval(2L, TimeUnit.SECONDS)
-					.autoReconnectedUponDroppedConnection(true);
-			ChronicleMapBuilder<String, AdThreshold> mapBuilder = ChronicleMapBuilder
-					.of(String.class, AdThreshold.class).entries(3000000L).replication(identifier, tcpConfig);
-			map = mapBuilder.createPersistedTo(f);
-		} catch (Exception e) {
-			LOGGER.error("create map error:", e);
+	
+	private final ThreadLocal<AdThreshold> thresholdThreadCache=new ThreadLocal<AdThreshold>(){
+		@Override
+		protected AdThreshold initialValue() {
+			return DataValueClasses.newDirectInstance(AdThreshold.class);
 		}
+	};
+
+	private DualMasterMapService(String remoteHost, int port, byte identifier) throws Exception {
+		File f = new File(STORAGE_FILE);
+		if (f.exists()) {
+			f.delete();
+		}
+		f.deleteOnExit();
+		TcpTransportAndNetworkConfig tcpConfig = TcpTransportAndNetworkConfig
+				.of(port, new InetSocketAddress(remoteHost, port)).heartBeatInterval(2L, TimeUnit.SECONDS)
+				.autoReconnectedUponDroppedConnection(true);
+		ChronicleMapBuilder<String, AdThreshold> mapBuilder = ChronicleMapBuilder
+				.of(String.class, AdThreshold.class).entries(3000000L).replication(identifier, tcpConfig);
+		map = mapBuilder.createPersistedTo(f);
 		ses.scheduleAtFixedRate(this::printMap, 2, 10, TimeUnit.MINUTES);
 	}
 
@@ -102,6 +107,7 @@ public class DualMasterMapService {
 		addBenchMapValue(e.getKey(), e.getValue());
 	}
 
+	/*
 	private void addMapValue(String id, AdThreshold delta) {
 		try {
 			AdThreshold threshold = map.computeIfAbsent(id, k -> map.newValueInstance());
@@ -114,7 +120,17 @@ public class DualMasterMapService {
 			LOGGER.error("chronicle-map add error:", e);
 		}
 	}
-
+	*/
+	
+	private void addMapValue(String id, AdThreshold delta) {
+		try (WriteContext<String, AdThreshold> context = map.acquireUsingLocked(id, thresholdThreadCache.get())) {
+			context.value().addTotalCost(delta.getTotalCost());
+			context.value().addTodayCost(delta.getTodayCost());
+		} catch (Exception e) {
+			LOGGER.error("chronicle-map add error:", e);
+		}
+	}
+	
 	private void addBenchMapValue(String id, AdThreshold delta) {
 		AtomicLong[] threshold = benchMap.computeIfAbsent(id,
 				k -> new AtomicLong[] { new AtomicLong(0), new AtomicLong(0) });
@@ -146,8 +162,7 @@ public class DualMasterMapService {
 			String[] idDeltas = idDeltasStr == null ? new String[0] : idDeltasStr.split(",");
 			for (String idDelta : idDeltas) {
 				String[] splitIdDelta = idDelta.split("_");
-				AdThreshold threshold = new AdThresholdImp();// must not use
-																// map.newValueInstance()
+				AdThreshold threshold = new AdThresholdImp();// must not use map.newValueInstance()
 				threshold.setTotalCost(Long.parseLong(splitIdDelta[1]));
 				threshold.setTodayCost(Long.parseLong(splitIdDelta[2]));
 				deltaMap.put(splitIdDelta[0], threshold);
@@ -191,8 +206,9 @@ public class DualMasterMapService {
 
 	/**
 	 * @param args
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		checkArguments(args);
 		String remoteHost = args[0];
 		int port = Integer.parseInt(args[1]);
@@ -227,12 +243,16 @@ public class DualMasterMapService {
 		long getTotalCost();
 
 		void setTotalCost(long value);
-
+		
+		long addTotalCost(long delta);
+		
 		long addAtomicTotalCost(long delta);
 
 		long getTodayCost();
 
 		void setTodayCost(long value);
+		
+		long addTodayCost(long delta);
 
 		long addAtomicTodayCost(long delta);
 	}
@@ -270,6 +290,16 @@ public class DualMasterMapService {
 
 		@Override
 		public long addAtomicTodayCost(long delta) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long addTotalCost(long delta) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long addTodayCost(long delta) {
 			throw new UnsupportedOperationException();
 		}
 	}
