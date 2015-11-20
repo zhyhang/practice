@@ -34,11 +34,11 @@ public class PersisCacheCall {
 
 	private static ExecutorService es = Executors.newFixedThreadPool(32);
 
-	private final static AtomicLong totalRequest = new AtomicLong();
+	private final static AtomicLong TotalRequest = new AtomicLong();
 
-	private final static AtomicLong totalError = new AtomicLong();
+	private final static AtomicLong TotalError = new AtomicLong();
 
-	private final static AtomicLong totalTimecost = new AtomicLong();
+	private final static AtomicLong TotalTimecost = new AtomicLong();
 	
 	private static String url;
 	
@@ -72,13 +72,13 @@ public class PersisCacheCall {
 			logger.info(method + "-threshold-waiting-end...");
 			es.awaitTermination(10, TimeUnit.MINUTES);
 			logger.info(
-					method + "-treshold-end, sizePerReq[{}], totalRequest[{}], totalError(error and not 200 status code)[{}], totalTimecost[{}]ms.",
-					sizePerReq, totalRequest.get(), totalError.get(), totalTimecost.get());
+					method + "-threshold-end, sizePerReq[{}], totalRequest[{}], totalError(error and not 200 status code)[{}], totalTimecost[{}]ms.",
+					sizePerReq, TotalRequest.get(), TotalError.get(), TotalTimecost.get());
 		}
 	}
 
 	private static void putBatch(int sizePerReq, int reqCount) {
-		logger.info("put-treshold-begin, sizePerReq[{}].", sizePerReq);
+		logger.info("put-threshold-begin, sizePerReq[{}].", sizePerReq);
 		// prepare data
 		deltaThres = new long[sizePerReq][];
 		Arrays.parallelSetAll(deltaThres, i -> {
@@ -91,15 +91,15 @@ public class PersisCacheCall {
 		// send request
 		try {
 			long lastSendReq = 0;
-			while (totalRequest.get() < reqCount || reqCount < 0) {
+			while (reqCount < 0 || reqCount-->0) {
 				es.execute(PersisCacheCall::putBatchTask);
-				// controll send speed
-				if (totalRequest.get() - lastSendReq > 10 || ThreadLocalRandom.current().nextDouble() < 0.1) {
-					lastSendReq = totalRequest.get();
+				// Control speed
+				if (TotalRequest.get() - lastSendReq > 80 || ThreadLocalRandom.current().nextDouble() < 0.01) {
+					lastSendReq = TotalRequest.get();
 					logger.info(
-							"put-treshold-info, sizePerReq[{}], totalRequest[{}], totalError(error and not 200 status code)[{}], totalTimecost[{}]ms.",
-							sizePerReq, totalRequest.get(), totalError.get(), totalTimecost.get());
-					TimeUnit.SECONDS.sleep(3);
+							"put-threshold-info, sizePerReq[{}], totalRequest[{}], totalError(error and not 200 status code)[{}], totalTimecost[{}]ms.",
+							sizePerReq, TotalRequest.get(), TotalError.get(), TotalTimecost.get());
+					TimeUnit.SECONDS.sleep(1);
 				}
 			}
 		} catch (Exception e) {
@@ -109,7 +109,7 @@ public class PersisCacheCall {
 
 	private static void putBatchTask() {
 		try {
-			totalRequest.incrementAndGet();
+			TotalRequest.incrementAndGet();
 			HttpPost post = new HttpPost(url);
 			SerializableEntity entity = new SerializableEntity(deltaThres, true);
 			entity.setChunked(true);
@@ -118,11 +118,11 @@ public class PersisCacheCall {
 			CloseableHttpResponse resp = client.execute(post, HttpClientContext.create());
 			resp.getEntity().getContent().close();
 			if (resp.getStatusLine().getStatusCode() != HttpURLConnection.HTTP_OK) {
-				totalError.incrementAndGet();
+				TotalError.incrementAndGet();
 			}
-			totalTimecost.addAndGet(System.currentTimeMillis() - tsb);
+			TotalTimecost.addAndGet(System.currentTimeMillis() - tsb);
 		} catch (Exception e) {
-			totalError.incrementAndGet();
+			TotalError.incrementAndGet();
 			logger.error("put-threshold-task-error:", e);
 		}
 	}
