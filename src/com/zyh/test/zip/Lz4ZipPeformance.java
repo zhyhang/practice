@@ -3,8 +3,6 @@
  */
 package com.zyh.test.zip;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import net.jpountz.lz4.LZ4Compressor;
