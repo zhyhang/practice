@@ -3,7 +3,9 @@
  */
 package com.zyh.test.chronicle;
 
+import java.io.Serializable;
 import java.net.HttpURLConnection;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,7 +17,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.entity.SerializableEntity;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -39,10 +41,10 @@ public class PersisCacheCall {
 	private final static AtomicLong TotalError = new AtomicLong();
 
 	private final static AtomicLong TotalTimecost = new AtomicLong();
-	
+
 	private static String url;
-	
-	private static long[][] deltaThres;
+
+	private static DeltaAdThreshold[] deltaThres;
 
 	static {
 		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
@@ -60,7 +62,7 @@ public class PersisCacheCall {
 	 */
 	public static void main(String[] args) throws InterruptedException {
 		checkArguments(args);
-		url=args[0];
+		url = args[0];
 		String method = args[1];
 		int sizePerReq = Integer.parseInt(args[2]);
 		int reqCount = Integer.parseInt(args[3]);
@@ -80,18 +82,13 @@ public class PersisCacheCall {
 	private static void putBatch(int sizePerReq, int reqCount) {
 		logger.info("put-threshold-begin, sizePerReq[{}].", sizePerReq);
 		// prepare data
-		deltaThres = new long[sizePerReq][];
-		Arrays.parallelSetAll(deltaThres, i -> {
-			long[] thres = new long[8];
-			Arrays.setAll(thres, index -> 1);
-			thres[0] = i;
-			thres[1] = System.currentTimeMillis();
-			return thres;
-		});
+		deltaThres = new DeltaAdThreshold[sizePerReq];
+		Arrays.parallelSetAll(deltaThres, i -> new DeltaAdThreshold((byte) 1, 1000000 + i, System.currentTimeMillis(),
+				new int[] { 1111111, 111111, 1111 }));
 		// send request
 		try {
 			long lastSendReq = 0;
-			while (reqCount < 0 || reqCount-->0) {
+			while (reqCount < 0 || reqCount-- > 0) {
 				es.execute(PersisCacheCall::putBatchTask);
 				// Control speed
 				if (TotalRequest.get() - lastSendReq > 80 || ThreadLocalRandom.current().nextDouble() < 0.01) {
@@ -111,8 +108,7 @@ public class PersisCacheCall {
 		try {
 			TotalRequest.incrementAndGet();
 			HttpPost post = new HttpPost(url);
-			SerializableEntity entity = new SerializableEntity(deltaThres, true);
-			entity.setChunked(true);
+			ByteArrayEntity entity = new ByteArrayEntity(DeltaAdThreshold.toBytes(deltaThres));
 			post.setEntity(entity);
 			long tsb = System.currentTimeMillis();
 			CloseableHttpResponse resp = client.execute(post, HttpClientContext.create());
@@ -137,6 +133,58 @@ public class PersisCacheCall {
 					"\trequest count: numbers of total requests sending to persis. negative (<0) number indicats continue loop. \n");
 			System.exit(-1);
 		}
+	}
+
+}
+
+final class DeltaAdThreshold implements Serializable {
+
+	public final static int BYTES = 29;
+	private static final long serialVersionUID = -8243877799040040995L;
+	private byte type;
+	private long id;
+	private long ts;
+	private int[] deltas;
+
+	public DeltaAdThreshold(byte type, long id, long ts, int[] deltas) {
+		this.type = type;
+		this.id = id;
+		this.ts = ts;
+		this.deltas = deltas;
+	}
+
+	public byte getType() {
+		return type;
+	}
+
+	public long getId() {
+		return id;
+	}
+
+	public long getTs() {
+		return ts;
+	}
+
+	public int[] getDeltas() {
+		return deltas;
+	}
+
+	public static byte[] toBytes(DeltaAdThreshold[] daThres) {
+		if (daThres == null || daThres.length == 0) {
+			return null;
+		}
+		int length = BYTES * daThres.length;
+		ByteBuffer bb = ByteBuffer.allocate(length);
+		for (int i = 0; i < daThres.length; i++) {
+			DeltaAdThreshold thres=daThres[i];
+			bb.put(thres.getType());
+			bb.putLong(thres.getId());
+			bb.putLong(thres.getTs());
+			for (int j = 0; j < thres.getDeltas().length; j++) {
+				bb.putInt(thres.getDeltas()[j]);
+			}
+		}
+		return bb.array();
 	}
 
 }
