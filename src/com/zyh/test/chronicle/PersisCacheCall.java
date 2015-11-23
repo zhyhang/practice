@@ -45,6 +45,12 @@ public class PersisCacheCall {
 	private static String url;
 
 	private static DeltaAdThreshold[] deltaThres;
+	
+	private static String method;
+	
+	private static int sizePerReq;
+	
+	private static int reqCount;
 
 	static {
 		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
@@ -63,19 +69,26 @@ public class PersisCacheCall {
 	public static void main(String[] args) throws InterruptedException {
 		checkArguments(args);
 		url = args[0];
-		String method = args[1];
-		int sizePerReq = Integer.parseInt(args[2]);
-		int reqCount = Integer.parseInt(args[3]);
+		method = args[1];
+		sizePerReq = Integer.parseInt(args[2]);
+		reqCount = Integer.parseInt(args[3]);
+		Runtime.getRuntime().addShutdownHook(new Thread(PersisCacheCall::hookShutdown));
 		if ("put".equalsIgnoreCase(method)) {
 			putBatch(sizePerReq, reqCount);
 		}
-		es.shutdown();
-		if (reqCount >= 0) {
+		System.exit(0);
+	}
+
+	private static void hookShutdown() {
+		try {
+			es.shutdown();
 			logger.info(method + "-threshold-waiting-end...");
 			es.awaitTermination(10, TimeUnit.MINUTES);
 			logger.info(
 					method + "-threshold-end, sizePerReq[{}], totalRequest[{}], totalError(error and not 200 status code)[{}], totalTimecost[{}]ms.",
 					sizePerReq, TotalRequest.get(), TotalError.get(), TotalTimecost.get());
+		} catch (Exception e) {
+			logger.error("", e);
 		}
 	}
 
