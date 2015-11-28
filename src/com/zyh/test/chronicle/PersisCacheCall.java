@@ -7,8 +7,8 @@ import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,8 +34,8 @@ public class PersisCacheCall {
 
 	private static CloseableHttpClient client;
 
-	private static ExecutorService es = Executors.newFixedThreadPool(32);
-
+	private static ScheduledThreadPoolExecutor es = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(32);
+	
 	private final static AtomicLong TotalRequest = new AtomicLong();
 
 	private final static AtomicLong TotalError = new AtomicLong();
@@ -60,6 +60,7 @@ public class PersisCacheCall {
 				.setConnectionManager(cm).setDefaultRequestConfig(RequestConfig.custom()
 						.setConnectionRequestTimeout(250).setConnectTimeout(500).setSocketTimeout(60000).build())
 				.build();
+		es.scheduleAtFixedRate(PersisCacheCall::printLog, 30, 20, TimeUnit.SECONDS);
 	}
 
 	/**
@@ -78,15 +79,21 @@ public class PersisCacheCall {
 		}
 		System.exit(0);
 	}
+	
+	private static void printLog(){
+		logger.info(
+				method + "-threshold-info, sizePerReq[{}], totalRequest[{}], totalError(error and not 200 status code)[{}], totalTimecost[{}]ms.",
+				sizePerReq, TotalRequest.get(), TotalError.get(), TotalTimecost.get());		
+	}
 
 	private static void hookShutdown() {
 		try {
-			es.shutdown();
-			logger.info(method + "-threshold-waiting-end...");
-			es.awaitTermination(10, TimeUnit.MINUTES);
-			logger.info(
-					method + "-threshold-end, sizePerReq[{}], totalRequest[{}], totalError(error and not 200 status code)[{}], totalTimecost[{}]ms.",
-					sizePerReq, TotalRequest.get(), TotalError.get(), TotalTimecost.get());
+			es.shutdownNow();
+			printLog();
+			int waitMinutes=1;
+			logger.info(method + "-threshold-waiting-end, waiting {} minutes...",waitMinutes);
+			es.awaitTermination(waitMinutes, TimeUnit.MINUTES);
+			printLog();
 		} catch (Exception e) {
 			logger.error("", e);
 		}
@@ -104,12 +111,11 @@ public class PersisCacheCall {
 			while (reqCount < 0 || reqCount-- > 0) {
 				es.execute(PersisCacheCall::putBatchTask);
 				// Control speed
-				if (TotalRequest.get() - lastSendReq > 80 || ThreadLocalRandom.current().nextDouble() < 0.01) {
+				int taskSize=es.getQueue().size();
+				if (TotalRequest.get() - lastSendReq > 80 || ThreadLocalRandom.current().nextDouble() < 0.01 || taskSize > 1000 ) {
 					lastSendReq = TotalRequest.get();
-					logger.info(
-							"put-threshold-info, sizePerReq[{}], totalRequest[{}], totalError(error and not 200 status code)[{}], totalTimecost[{}]ms.",
-							sizePerReq, TotalRequest.get(), TotalError.get(), TotalTimecost.get());
-					TimeUnit.SECONDS.sleep(1);
+					printLog();
+					TimeUnit.SECONDS.sleep(1+taskSize / 1000);
 				}
 			}
 		} catch (Exception e) {
