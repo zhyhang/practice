@@ -7,18 +7,20 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
+import com.alibaba.fastjson.JSON;
+
 import jodd.lagarto.dom.Document;
 import jodd.lagarto.dom.LagartoDOMBuilder;
-import jodd.lagarto.dom.Node;
 
 /**
  * 
@@ -34,7 +36,8 @@ public class MainTemporary {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		extractFilePage();
+		printMap();
+//		extractFilePage();
 //		extractHttpPage();
 
 	}
@@ -86,6 +89,18 @@ public class MainTemporary {
 					Base64.getEncoder().encodeToString(childNodes[i].getHtml().getBytes(StandardCharsets.UTF_8)));
 		}
 		*/
+	}
+	
+	private static void printMap(){
+		List<Long[]> reqObj = new ArrayList<>();
+		// linux shell  date -d'2015-11-18' +%s get secornd since 1970 
+		// add "000" to milli
+		reqObj.add(new Long[] { 1447776000000L });
+		reqObj.add(new Long[] { 16922L });
+		reqObj.add(new Long[] { 15966L });
+		reqObj.add(new Long[] { 20206L });
+		reqObj.add(new Long[] { 63332L });
+		System.out.println(JSON.toJSONString(reqObj));
 	}
 	
 	
