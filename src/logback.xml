@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-	<property name="LOG_HOME" value="." />
-	<property name="LOG_HOME_ING" value="./ing" />
+	<property name="LOG_HOME" value="${java.io.tmpdir}" />
+	<property name="LOG_HOME_ING" value="${LOG_HOME}/ing" />
 	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
 			<pattern>[%d %-5level %t] %msg%n</pattern>
@@ -9,11 +9,13 @@
 	</appender>
 
 	<!-- System log -->
-	<appender name="file.log.sys" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	<appender name="file.log.sys"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<append>true</append>
 		<file>${LOG_HOME_ING}/practice.sys.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<fileNamePattern>${LOG_HOME}/sys/%d{yyyyMMdd}.practice.sys.log</fileNamePattern>
+			<fileNamePattern>${LOG_HOME}/sys/%d{yyyyMMdd}.practice.sys.log
+			</fileNamePattern>
 		</rollingPolicy>
 		<encoder>
 			<pattern>[%d %-5level %t] %msg%n</pattern>
@@ -24,5 +26,29 @@
 		<appender-ref ref="stdout" />
 		<appender-ref ref="file.log.sys" />
 	</root>
-	
+
+	<appender name="file_dynamic_path" class="ch.qos.logback.classic.sift.SiftingAppender">
+		<discriminator>
+			<key>partner</key>
+			<defaultValue>idm</defaultValue>
+		</discriminator>
+		<sift>
+			<appender name="FILE-${partner}"
+				class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<append>true</append>
+				<file>${LOG_HOME_ING}/${partner}/dpath.test.log</file>
+				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+					<fileNamePattern>${LOG_HOME}/test/${partner}/%d{yyyyMMdd,aux}/%d{yyyyMMddHHmm}.dpaht.test.log
+					</fileNamePattern>
+				</rollingPolicy>
+				<encoder>
+					<pattern>%msg%n</pattern>
+				</encoder>
+			</appender>
+		</sift>
+	</appender>
+	<logger name="test_dpath.log" level="INFO" additivity="false">
+		<appender-ref ref="file_dynamic_path" />
+	</logger>
+
 </configuration>
