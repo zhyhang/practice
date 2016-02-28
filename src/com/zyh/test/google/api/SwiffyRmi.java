@@ -7,23 +7,13 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import javax.net.ssl.SSLContext;
-
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.impl.sync.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.sync.HttpClients;
 import org.apache.hc.client5.http.methods.CloseableHttpResponse;
 import org.apache.hc.client5.http.methods.HttpPost;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.TrustSelfSignedStrategy;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.entity.EntityUtils;
 import org.apache.hc.core5.http.entity.StringEntity;
-import org.apache.hc.core5.ssl.SSLContexts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,60 +24,17 @@ import com.alibaba.fastjson.JSON;
  * 
  * @author zhyhang
  */
-public class SwiffyRmi {
-
-	public static final String ERROR_PREFIX = "error-f2h5-convertion: ";
+public class SwiffyRmi implements Flash2Html {
 
 	protected static Logger logger = LoggerFactory.getLogger(SwiffyRmi.class);
 
-	private static final int TIMEOUT_MILLIS = 60000;
-
 	private static final String URL_HTTPS_WWW_GOOGLEAPIS = "https://www.googleapis.com/rpc?key=AIzaSyCC_WIu0oVvLtQGzv4-g7oaWNoc-u8JpEI";
 
-	private static final Pattern PATTERN_RUNTIME_JS = Pattern.compile("https://www.gstatic.com/.+/runtime.js");
-
-	private static final String REPLACE_RUNTIME_JS = "http://fm.p0y.cn/j/swiffy/v7.4/runtime.js";
-
-	private static CloseableHttpClient httpclient;
-
-	static {
-		SSLContext sslcontext = null;
-		try {
-			// Trust own CA and all self-signed certs
-			sslcontext = SSLContexts.custom().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// Allow TLSv1 protocol only
-		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslcontext, new String[] { "TLSv1" }, null,
-				SSLConnectionSocketFactory.getDefaultHostnameVerifier());
-		httpclient = HttpClients.custom()
-				.setDefaultRequestConfig(RequestConfig.custom().setConnectionRequestTimeout(TIMEOUT_MILLIS)
-						.setConnectTimeout(TIMEOUT_MILLIS).setSocketTimeout(TIMEOUT_MILLIS).build())
-				.setSSLSocketFactory(sslsf).build();
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			try {
-				httpclient.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}));
-	}
-
 	public final static void main(String[] args) throws Exception {
-		String respHtml = new SwiffyRmi().convert("/home/zhyhang/temp/57.swf");
+		String respHtml = new SwiffyRmi().convert("d:/temp/57.swf");
 		System.out.println(respHtml);
 	}
 
-	/**
-	 * convert a specified flash swf to html5 string
-	 * 
-	 * @param fileName
-	 *            a full path flash swf file
-	 * @return <b>html5 string if success</b><br>
-	 *         <b>if error, return string is start with
-	 *         "error-f2h5-convertion: "</b>
-	 */
 	public String convert(String fileName) {
 		SwiffyRequest swiffyRequest = new SwiffyRequest(fileName);
 		if (swiffyRequest.getParams().getInput() == null || swiffyRequest.getParams().getInput().trim().isEmpty()) {
@@ -103,8 +50,8 @@ public class SwiffyRmi {
 		postJson.setContentType("application/json");
 		httppost.setEntity(postJson);
 
-		logger.info("executing swiffy service request {}", httppost.getRequestLine());
-		try (CloseableHttpResponse response = httpclient.execute(httppost)) {
+		logger.info("executing swiffy service request, file{}, {}", fileName, httppost.getRequestLine());
+		try (CloseableHttpResponse response = HTTPS_CLIENT.execute(httppost)) {
 			HttpEntity entity = response.getEntity();
 			logger.info("swiffy service response {}", response.getStatusLine());
 			String respJson = EntityUtils.toString(entity);
@@ -150,14 +97,6 @@ public class SwiffyRmi {
 			return ERROR_PREFIX + respDetail.getStatus();
 		}
 
-	}
-
-	private String processHtml(String html5) {
-		Matcher matcher = PATTERN_RUNTIME_JS.matcher(html5);
-		if (matcher.find()) {
-			return matcher.replaceAll(REPLACE_RUNTIME_JS);
-		}
-		return html5;
 	}
 
 }

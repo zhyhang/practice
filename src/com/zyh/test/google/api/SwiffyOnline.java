@@ -1,133 +1,212 @@
 package com.zyh.test.google.api;
 
 import java.io.File;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.nio.charset.StandardCharsets;
 
-import javax.net.ssl.SSLContext;
-
-import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.entity.mime.FileBody;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-import org.apache.hc.client5.http.entity.mime.StringBody;
-import org.apache.hc.client5.http.impl.sync.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.sync.HttpClients;
 import org.apache.hc.client5.http.methods.CloseableHttpResponse;
+import org.apache.hc.client5.http.methods.HttpGet;
 import org.apache.hc.client5.http.methods.HttpPost;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.TrustSelfSignedStrategy;
+import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.entity.ContentType;
 import org.apache.hc.core5.http.entity.EntityUtils;
-import org.apache.hc.core5.ssl.SSLContexts;
+import org.apache.hc.core5.http.message.BasicHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson.JSON;
+
 /**
- * call google swiffy service to convert flash swf file to html5.
+ * call google swiffy online upload to convert flash swf file to html5.
  * 
  * @author zhyhang
  */
-public class SwiffyOnline {
+public class SwiffyOnline implements Flash2Html{
 
-	public static final String ERROR_PREFIX = "error-f2h5-convertion: ";
+	private static Logger logger = LoggerFactory.getLogger(SwiffyOnline.class);
 
-	protected static Logger logger = LoggerFactory.getLogger(SwiffyOnline.class);
+	/**
+	 * Online Swiffy upload constants
+	 */
+	private static final String URL_HTTPS_SWIFFY_UPLOAD = "https://google-swiffy.appspot.com/upload";
+	private static final Header[] HEADERS_SWIFFY_UPLOAD = new Header[] {
+			new BasicHeader("Host", "google-swiffy.appspot.com"),
+			new BasicHeader("Accept-Encoding", "gzip,deflate,sdch"),
+			new BasicHeader("User-Agent",
+					"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0"),
+			// important don't remove
+			new BasicHeader("Origin", "https://google-developers.appspot.com"),
+			new BasicHeader("Referer", "https://google-developers.appspot.com/swiffy/convert/")
 
-	private static final int TIMEOUT_MILLIS = 60000;
-
-	private static final String URL_HTTPS_WWW_GOOGLEAPIS = "https://google-swiffy.appspot.com/upload";
-
-	private static final Pattern PATTERN_RUNTIME_JS = Pattern.compile("https://www.gstatic.com/.+/runtime.js");
-
-	private static final String REPLACE_RUNTIME_JS = "http://fm.p0y.cn/j/swiffy/v7.4/runtime.js";
-
-	private static CloseableHttpClient httpclient;
-
-	static {
-		SSLContext sslcontext = null;
-		try {
-			// Trust own CA and all self-signed certs
-			sslcontext = SSLContexts.custom().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// Allow TLSv1 protocol only
-		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslcontext, new String[] { "TLSv1" }, null,
-				SSLConnectionSocketFactory.getDefaultHostnameVerifier());
-		httpclient = HttpClients.custom()
-				.setDefaultRequestConfig(RequestConfig.custom().setConnectionRequestTimeout(TIMEOUT_MILLIS)
-						.setConnectTimeout(TIMEOUT_MILLIS).setSocketTimeout(TIMEOUT_MILLIS).build())
-				.setSSLSocketFactory(sslsf).build();
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			try {
-				httpclient.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}));
-	}
+	};
+	private static final String FORM_SWF_NAME_SWIFFY_UPLOAD="swfFile";
 
 	public final static void main(String[] args) throws Exception {
-		String respHtml = new SwiffyOnline().convert("/home/zhyhang/temp/57.swf");
+		String respHtml = new SwiffyOnline().convert("d:/temp/57.swf");//70f74b3c4327345a0d33b65e2a1f0155.swf");// 57.swf");
 		System.out.println(respHtml);
 	}
 
-	/**
-	 * convert a specified flash swf to html5 string
-	 * 
-	 * @param fileName
-	 *            a full path flash swf file
-	 * @return <b>html5 string if success</b><br>
-	 *         <b>if error, return string is start with
-	 *         "error-f2h5-convertion: "</b>
-	 */
 	public String convert(String fileName) {
-		
-        HttpPost httppost = new HttpPost(URL_HTTPS_WWW_GOOGLEAPIS);
-		
-		 FileBody bin = new FileBody(new File(fileName));
-         StringBody comment = new StringBody("A binary file of some kind", ContentType.TEXT_PLAIN);
+		HttpEntity reqEntity = null;
+		try{
+			reqEntity = MultipartEntityBuilder.create().addPart(FORM_SWF_NAME_SWIFFY_UPLOAD, new FileBody(new File(fileName))).build();
+		}catch(Exception e){
+			logger.error("cannot read the file  {}", fileName);
+			return ERROR_PREFIX + "cannot read the file " + fileName;
+		}
+		HttpPost httppost = new HttpPost(URL_HTTPS_SWIFFY_UPLOAD);
+		httppost.setEntity(reqEntity);
+		httppost.setHeaders(HEADERS_SWIFFY_UPLOAD);
 
-         HttpEntity reqEntity = MultipartEntityBuilder.create()
-                 .addPart("bin", bin)
-//                 .addPart("comment", comment)
-//                 .setContentType(ContentType.MULTIPART_FORM_DATA)
-                 .build();
-
-         
-         httppost.setHeader("Host","google-swiffy.appspot.com");
-         httppost.setHeader("Accept-Encoding", "gzip,deflate,sdch");
-         httppost.setHeader("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0");
-         httppost.setHeader("Origin", "https://google-developers.appspot.com");
-         httppost.setHeader("Referer", "https://google-developers.appspot.com/swiffy/convert/upload_945c8a7aa0714560e00b8a9e935f9be1.frame?hl=en&redesign=true");
-         httppost.setEntity(reqEntity);
-         
-         System.out.println("executing request " + httppost.getRequestLine());
-         try(CloseableHttpResponse response = httpclient.execute(httppost)) {
-             System.out.println("----------------------------------------");
-             System.out.println(response.getStatusLine());
-             HttpEntity resEntity = response.getEntity();
-             if (resEntity != null) {
-                 System.out.println("Response content length: " + resEntity.getContentLength());
-                 System.out.println("Response content detail: " + EntityUtils.toString(resEntity));
-             }
-             EntityUtils.consume(resEntity);
-         }catch(Exception e){
-        	 e.printStackTrace();
-         }
-         return null;
-         
+		logger.info("executing swiffy upload, file {}, {}", fileName, httppost.getRequestLine());
+		try (CloseableHttpResponse response = HTTPS_CLIENT.execute(httppost)) {
+				HttpEntity entity = response.getEntity();
+				logger.info("swiffy upload response {}", response.getStatusLine());
+				String respJson = EntityUtils.toString(entity);
+				logger.info("response json: {}", respJson);
+				SwiffyOnlineResponse respSwiffy = JSON.parseObject(respJson, SwiffyOnlineResponse.class);
+				if (respSwiffy!=null && respSwiffy.getOutputFileDir()!=null && respSwiffy.getOutputFile()!=null) {
+					EntityUtils.consume(entity);
+					return parseHtmlOnline(respSwiffy);
+				} else {
+					EntityUtils.consume(entity);
+					return ERROR_PREFIX + "call swiffy upload error";
+				}
+		} catch (Exception e) {
+			logger.error("call swiffy upload error", e);
+			return ERROR_PREFIX + "call swiffy upload error";
+		}
 
 	}
-
-	private String processHtml(String html5) {
-		Matcher matcher = PATTERN_RUNTIME_JS.matcher(html5);
-		if (matcher.find()) {
-			return matcher.replaceAll(REPLACE_RUNTIME_JS);
+	
+	private String parseHtmlOnline(SwiffyOnlineResponse uploadResp){
+		String htmlUrl=uploadResp.getOutputFileDir().trim();
+		htmlUrl=htmlUrl.endsWith("/")?htmlUrl.concat(uploadResp.getOutputFile().trim()):htmlUrl.concat("/").concat(uploadResp.getOutputFile().trim());
+		HttpGet httpget=new HttpGet(htmlUrl);
+		logger.info("executing get swiffy upload converted file {}", htmlUrl);
+		try (CloseableHttpResponse response = HTTPS_CLIENT.execute(httpget)) {
+				HttpEntity entity = response.getEntity();
+				logger.info("get swiffy upload converted file response {}", response.getStatusLine());
+				String respHtml = EntityUtils.toString(entity,StandardCharsets.UTF_8);
+				if (respHtml!=null) {
+					EntityUtils.consume(entity);
+					return processHtml(respHtml);
+				} else {
+					EntityUtils.consume(entity);
+					return ERROR_PREFIX + "get swiffy upload converted file error";
+				}
+		} catch (Exception e) {
+			logger.error("get swiffy upload converted file error", e);
+			return ERROR_PREFIX + "get swiffy upload converted file error";
 		}
-		return html5;
+	}
+	
+}
+
+class SwiffyOnlineResponse {
+	private String outputFileDir;
+	private String outputFile;
+	private String creativeKey;
+	private int width;
+	private int height;
+	private double swfSizeInKb;
+	private double totalOutputSizeGzippedInKb;
+	private SwiffyOnlineRespMsg[] messages;
+
+	public String getOutputFileDir() {
+		return outputFileDir;
+	}
+
+	public void setOutputFileDir(String outputFileDir) {
+		this.outputFileDir = outputFileDir;
+	}
+
+	public String getOutputFile() {
+		return outputFile;
+	}
+
+	public void setOutputFile(String outputFile) {
+		this.outputFile = outputFile;
+	}
+
+	public String getCreativeKey() {
+		return creativeKey;
+	}
+
+	public void setCreativeKey(String creativeKey) {
+		this.creativeKey = creativeKey;
+	}
+
+	public int getWidth() {
+		return width;
+	}
+
+	public void setWidth(int width) {
+		this.width = width;
+	}
+
+	public int getHeight() {
+		return height;
+	}
+
+	public void setHeight(int height) {
+		this.height = height;
+	}
+
+	public double getSwfSizeInKb() {
+		return swfSizeInKb;
+	}
+
+	public void setSwfSizeInKb(double swfSizeInKb) {
+		this.swfSizeInKb = swfSizeInKb;
+	}
+
+	public double getTotalOutputSizeGzippedInKb() {
+		return totalOutputSizeGzippedInKb;
+	}
+
+	public void setTotalOutputSizeGzippedInKb(double totalOutputSizeGzippedInKb) {
+		this.totalOutputSizeGzippedInKb = totalOutputSizeGzippedInKb;
+	}
+
+	public SwiffyOnlineRespMsg[] getMessages() {
+		return messages;
+	}
+
+	public void setMessages(SwiffyOnlineRespMsg[] messages) {
+		this.messages = messages;
 	}
 
 }
 
+class SwiffyOnlineRespMsg {
+	private String message;
+	private int numberOfOccurences;
+	private String messageType;
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
+
+	public int getNumberOfOccurences() {
+		return numberOfOccurences;
+	}
+
+	public void setNumberOfOccurences(int numberOfOccurences) {
+		this.numberOfOccurences = numberOfOccurences;
+	}
+
+	public String getMessageType() {
+		return messageType;
+	}
+
+	public void setMessageType(String messageType) {
+		this.messageType = messageType;
+	}
+
+}
