@@ -50,7 +50,7 @@ public class SwiffyRmi implements Flash2Html {
 		postJson.setContentType("application/json");
 		httppost.setEntity(postJson);
 
-		logger.info("executing swiffy service request, file{}, {}", fileName, httppost.getRequestLine());
+		logger.info("executing swiffy service request, file {}, {}", fileName, httppost.getRequestLine());
 		try (CloseableHttpResponse response = HTTPS_CLIENT.execute(httppost)) {
 			HttpEntity entity = response.getEntity();
 			logger.info("swiffy service response {}", response.getStatusLine());
