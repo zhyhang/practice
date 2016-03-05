@@ -8,8 +8,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -36,7 +41,8 @@ public class MainTemporary {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		printMap();
+		mapIterateRemove();
+//		printMap();
 //		extractFilePage();
 //		extractHttpPage();
 
@@ -103,6 +109,19 @@ public class MainTemporary {
 		System.out.println(JSON.toJSONString(reqObj));
 	}
 	
-	
+	private static void mapIterateRemove(){
+		Map map=new HashMap<Integer,Integer>();
+		map.put(1,1);
+		map.put(2, 2);
+		map.put(3, 3);
+		Iterator<Map.Entry<Integer, Integer>> itr = map.entrySet().iterator();
+		while(itr.hasNext()){
+			Entry<Integer, Integer> entry = itr.next();
+			if(entry.getKey().equals(Integer.valueOf(2))){
+				itr.remove();
+			}
+		}
+		System.out.println(JSON.toJSONString(map));
+	}
 
 }
