@@ -5,7 +5,7 @@ package com.zyh.test.chronicle;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadLocalRandom;
 
 import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
@@ -39,7 +39,7 @@ public class ChronicleMapRecycle {
 		ChronicleMapBuilder<String, LongValue> mapBuilder = ChronicleMapBuilder.of(String.class, LongValue.class)
 				.entries(maxEntry);
 		ChronicleMap<String, LongValue> map = mapBuilder.createPersistedTo(f);
-		for (int i = 0; i < 10 * maxEntry; i++) {
+		for (int i = 0; i < 20 * maxEntry; i++) {
 			try (WriteContext<String, LongValue> context = map.acquireUsingLocked(String.valueOf(i),
 					THREAD_LOCAL_LONGVALUE.get())) {
 				context.value().setValue(i);
@@ -47,17 +47,25 @@ public class ChronicleMapRecycle {
 			if(i%1000==0){
 				System.out.format("count[%d], max entry[%d],current size[%d]\n", i,maxEntry, map.longSize());
 			}
-			if(i>=maxEntry - 1){
-				String removeKey=map.keySet().iterator().next();
-				try (WriteContext<String, LongValue> context = map.acquireUsingLocked(removeKey,
-						THREAD_LOCAL_LONGVALUE.get())) {
-					context.removeEntry();
+			
+			// remove ok
+			if (i >= maxEntry - 1) {
+				while (true) {
+					String removeKey = String.valueOf(ThreadLocalRandom.current().nextInt(i));
+					if (null != map.remove(removeKey) || map.size() == 0) {
+						break;
+					}
 				}
 			}
+			
+			// remove error 
+//			if(i>=maxEntry - 1){
+//				String removeKey=map.keySet().iterator().next();
+//				map.remove(removeKey);
+//			}
 
 		}
 		
-		TimeUnit.MINUTES.sleep(10);
 		map.close();
 	}
 
