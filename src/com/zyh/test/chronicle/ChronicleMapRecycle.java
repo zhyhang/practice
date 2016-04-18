@@ -5,7 +5,6 @@ package com.zyh.test.chronicle;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.Iterator;
 import java.util.concurrent.ThreadLocalRandom;
 
 import net.openhft.chronicle.map.ChronicleMap;
@@ -16,10 +15,15 @@ import net.openhft.lang.values.LongValue;
 
 /**
  * chronicle map put remove put remove ... <br>
- * <b>1.non-replicated map call remove(key), will real remove the entry from map; size--; put new key will allow</b><br>
- * <b>2.replicated map call remove(key), will only flag the entry to deleted; size--; put new key possibly throw illegal state exception </b><br>
- * <b>3.when remove a key with map.keySet().iterator.next(), then put another key, will throw exception, because the "iterator next" always remove the entry in first position. 
- * should go on the iterator randomly get a remove key. </b></br>
+ * <b>1.non-replicated map call remove(key), will real remove the entry from
+ * map; size--; put new key will allow</b><br>
+ * <b>2.replicated map call remove(key), will only flag the entry to deleted;
+ * size--; put new key possibly throw illegal state exception </b><br>
+ * <b>3.when remove a key with map.keySet().iterator.next(), then put another
+ * key, will throw exception, because the "iterator next" always remove the
+ * entry in first position. should go on the iterator randomly get a remove
+ * key. </b></br>
+ * 
  * @author zhyhang
  *
  */
@@ -40,6 +44,16 @@ public class ChronicleMapRecycle {
 		int maxEntry = 10000;
 		File f = Files.createTempFile("cmap-recycle-test", ".dat").toFile();
 		// create map
+		/**
+		 * replicated map, remove(key) will do nothing but flag the entry is deleted, i.e. will not release the memory space.
+		 * <pre>
+		 * TcpTransportAndNetworkConfig tcpConfig = TcpTransportAndNetworkConfig
+		 * 		.of(7802, new InetSocketAddress("10.1.1.3", 7802)).heartBeatInterval(10L, TimeUnit.SECONDS)
+		 * 		.autoReconnectedUponDroppedConnection(true);
+		 * ChronicleMapBuilder<String, LongValue> mapBuilder = ChronicleMapBuilder.of(String.class, LongValue.class)
+		 * 		.entries(maxEntry).replication((byte) 10, tcpConfig);
+		 * </pre>
+		 */
 		ChronicleMapBuilder<String, LongValue> mapBuilder = ChronicleMapBuilder.of(String.class, LongValue.class)
 				.entries(maxEntry);
 		ChronicleMap<String, LongValue> map = mapBuilder.createPersistedTo(f);
@@ -62,16 +76,17 @@ public class ChronicleMapRecycle {
 				}
 			}
 
-			// remove using iterator, must go to random key, not only using "map.keySet().iterator().next"
-//			if (i >= maxEntry - 1) {
-//				String removeKey = null;
-//				int randomPos = ThreadLocalRandom.current().nextInt(maxEntry);
-//				Iterator<String> ksIterator = map.keySet().iterator();
-//				while (randomPos-- >= 0 && ksIterator.hasNext()) {
-//					removeKey = ksIterator.next();
-//				}
-//				map.remove(removeKey);
-//			}
+			// remove using iterator, must go to random key, not only using
+			// "map.keySet().iterator().next"
+			// if (i >= maxEntry - 1) {
+			// String removeKey = null;
+			// int randomPos = ThreadLocalRandom.current().nextInt(maxEntry);
+			// Iterator<String> ksIterator = map.keySet().iterator();
+			// while (randomPos-- >= 0 && ksIterator.hasNext()) {
+			// removeKey = ksIterator.next();
+			// }
+			// map.remove(removeKey);
+			// }
 
 		}
 
