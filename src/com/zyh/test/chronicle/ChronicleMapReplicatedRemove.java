@@ -29,9 +29,15 @@ import net.openhft.lang.values.LongValue;
 public class ChronicleMapReplicatedRemove {
 	private static ChronicleMap<String, LongValue> map;
 	private final static transient Logger logger = LoggerFactory.getLogger(ChronicleMapReplicatedRemove.class);
-	private static ThreadLocal<LongValue> cacheValue=ThreadLocal.withInitial(()->{return DataValueClasses.newDirectInstance(LongValue.class);});
-	private static ScheduledExecutorService ses=Executors.newScheduledThreadPool(4);
-	private static boolean runAsServer=false; 
+	private static ThreadLocal<LongValue> cacheValue = ThreadLocal.withInitial(() -> {
+		return DataValueClasses.newDirectInstance(LongValue.class);
+	});
+	private static ScheduledExecutorService ses = Executors.newScheduledThreadPool(4);
+	private static boolean runAsServer = false;
+
+	private static final long maxEntries = 100000;
+	private static final String flagPrefix = "flag-key-";
+	private static final int flagNum = 10;
 
 	public static void main(String[] argv) throws Exception {
 		checkArguments(argv);
@@ -53,10 +59,9 @@ public class ChronicleMapReplicatedRemove {
 		String host = argv[0];
 		int port = Integer.parseInt(argv[1]);
 		byte identifier = Byte.parseByte(argv[2]);
-		runAsServer=Boolean.valueOf(argv[3]);
+		runAsServer = Boolean.valueOf(argv[3]);
 		// create map
-		long maxEntries=5000000;
-		File f = Files.createTempFile("cmap-replicate-remove-test", ".dat").toFile();
+		File f = Files.createTempFile("cmap-replicate-remove-test.", ".dat").toFile();
 		f.deleteOnExit();
 		TcpTransportAndNetworkConfig tcpConfig = TcpTransportAndNetworkConfig
 				.of(port, new InetSocketAddress(host, port)).heartBeatInterval(10L, TimeUnit.SECONDS)
@@ -65,17 +70,15 @@ public class ChronicleMapReplicatedRemove {
 				.entries(maxEntries).replication(identifier, tcpConfig);
 		map = mapBuilder.createPersistedTo(f);
 		// schedule print info
-		int flagNum=10;
-		String flagPrefix="flag-key-";
-		ses.scheduleAtFixedRate(()->{
-			logger.info("map-info: size[{}], file at [{}].",map.longSize(),map.file().getName());
+		ses.scheduleAtFixedRate(() -> {
+			logger.info("map-info: size[{}], file at [{}].", map.longSize(), map.file().getName());
 			for (int i = 0; i < flagNum; i++) {
-				String key=flagPrefix.concat(String.valueOf(i));
-				if(map.containsKey(key)){
-					logger.info("map-info: exists key[{}].",key);
+				String key = flagPrefix.concat(String.valueOf(i));
+				if (map.containsKey(key)) {
+					logger.info("map-info: exists key[{}].", key);
 				}
 			}
-		}, 5, 5, TimeUnit.SECONDS);
+		} , 5, 5, TimeUnit.SECONDS);
 		// fill entries to map
 		LongValue v = cacheValue.get();
 		v.setValue(0);
@@ -84,40 +87,46 @@ public class ChronicleMapReplicatedRemove {
 			map.put(flagPrefix.concat(String.valueOf(i)), v);
 		}
 		try {
-			long l=0;
-			while (l<maxEntries*2) {
+			long l = 0;
+			while (l++ < maxEntries * 2) {
+				LongValue value = cacheValue.get();
+				value.setValue(l);
+				map.put(String.valueOf(l), value);
+			}
+		} catch (Exception e) {
+			logger.info("init map exceed max entries, size[{}].", map.size(), e);
+		}
+		logger.info("map-init-complete: size[{}], file at [{}].", map.longSize(), map.file().getName());
+		// schedule put - remove
+		ses.scheduleAtFixedRate(ChronicleMapReplicatedRemove::putRemove, 3, 3, TimeUnit.SECONDS);
+	}
+
+	private static void putRemove() {
+		try {
+			logger.info("put-remove doing...");
+			int num = 10;
+			long top=maxEntries * 2;
+			for (int i = 0; i < num; i++) {
+				long rl = ThreadLocalRandom.current().nextLong(top);
+				map.remove(String.valueOf(rl));
+			}
+			for (int i = 0; i < num; i++) {
 				long rl = ThreadLocalRandom.current().nextLong();
 				LongValue value = cacheValue.get();
 				value.setValue(rl);
 				map.put(String.valueOf(rl), value);
 			}
-		} catch (Exception e) {
-			logger.info("init map exceed max entries", e);
-		}
-		// schedule put - remove 
-		ses.scheduleAtFixedRate(ChronicleMapReplicatedRemove::putRemove, 3, 3, TimeUnit.SECONDS);
-	}
-	
-	private static void putRemove(){
-		int num=10;
-		for (int i = 0; i < num; i++) {
-			long rl = ThreadLocalRandom.current().nextLong();
-			map.remove(String.valueOf(rl));
-		}
-		for (int i = 0; i < num; i++) {
-			long rl = ThreadLocalRandom.current().nextLong();
-			LongValue value = cacheValue.get();
-			value.setValue(rl);
-			try{
-				map.put(String.valueOf(rl), value);
-			} catch (Exception e) {
-				logger.info("put-remove map exceed max entries", e);
+			if (runAsServer) {
+				for (int i = 0; i < flagNum; i++) {
+					String key = flagPrefix.concat(String.valueOf(i));
+					map.remove(key);
+				}
 			}
+			logger.info("put-remove done.");
+		} catch (Exception e) {
+			logger.info("put-remove map exceed max entries", e);
 		}
-		for (int i = 0; i < 10; i++) {
-			String key="flag-key-".concat(String.valueOf(i));
-			map.remove(key);
-		}
+
 	}
 
 }
