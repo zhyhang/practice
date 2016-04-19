@@ -4,9 +4,12 @@
 package com.zyh.test.chronicle;
 
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
+import net.openhft.chronicle.hash.replication.TcpTransportAndNetworkConfig;
 import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
 import net.openhft.chronicle.map.WriteContext;
@@ -44,8 +47,11 @@ public class ChronicleMapRecycle {
 		int maxEntry = 10000;
 		File f = Files.createTempFile("cmap-recycle-test", ".dat").toFile();
 		// create map
+
 		/**
-		 * replicated map, remove(key) will do nothing but flag the entry is deleted, i.e. will not release the memory space.
+		 * replicated map, remove(key) will do nothing but flag the entry is
+		 * deleted, i.e. will not release the memory space.
+		 * 
 		 * <pre>
 		 * TcpTransportAndNetworkConfig tcpConfig = TcpTransportAndNetworkConfig
 		 * 		.of(7802, new InetSocketAddress("10.1.1.3", 7802)).heartBeatInterval(10L, TimeUnit.SECONDS)
@@ -54,23 +60,33 @@ public class ChronicleMapRecycle {
 		 * 		.entries(maxEntry).replication((byte) 10, tcpConfig);
 		 * </pre>
 		 */
+
+		TcpTransportAndNetworkConfig tcpConfig = TcpTransportAndNetworkConfig
+				.of(7802, new InetSocketAddress("10.1.1.3", 7802)).heartBeatInterval(10L, TimeUnit.SECONDS)
+				.autoReconnectedUponDroppedConnection(true);
+		ChronicleMapBuilder<String, LongValue> mapBuilderRep = ChronicleMapBuilder.of(String.class, LongValue.class)
+				.entries(maxEntry).replication((byte) 10, tcpConfig);
+
+		// create non-replicated map then replicated will normally remove key
 		ChronicleMapBuilder<String, LongValue> mapBuilder = ChronicleMapBuilder.of(String.class, LongValue.class)
 				.entries(maxEntry);
 		ChronicleMap<String, LongValue> map = mapBuilder.createPersistedTo(f);
+
+		ChronicleMap<String, LongValue> mapRep = mapBuilderRep.createPersistedTo(f);
 		for (int i = 0; i < 20 * maxEntry; i++) {
-			try (WriteContext<String, LongValue> context = map.acquireUsingLocked(String.valueOf(i),
+			try (WriteContext<String, LongValue> context = mapRep.acquireUsingLocked(String.valueOf(i),
 					THREAD_LOCAL_LONGVALUE.get())) {
 				context.value().setValue(i);
 			}
 			if (i % 1000 == 0) {
-				System.out.format("count[%d], max entry[%d],current size[%d]\n", i, maxEntry, map.longSize());
+				System.out.format("count[%d], max entry[%d],current size[%d]\n", i, maxEntry, mapRep.longSize());
 			}
 
 			// remove by generated random key
 			if (i >= maxEntry - 1) {
 				while (true) {
 					String removeKey = String.valueOf(ThreadLocalRandom.current().nextInt(i));
-					if (null != map.remove(removeKey) || map.size() == 0) {
+					if (null != mapRep.remove(removeKey) || mapRep.size() == 0) {
 						break;
 					}
 				}
@@ -91,6 +107,7 @@ public class ChronicleMapRecycle {
 		}
 
 		map.close();
+		mapRep.close();
 	}
 
 }
