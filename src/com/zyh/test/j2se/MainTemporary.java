@@ -4,6 +4,7 @@
 package com.zyh.test.j2se;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -41,10 +42,13 @@ public class MainTemporary {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		mapIterateRemove();
+		long ts=System.currentTimeMillis();
+		System.out.format("%tY%tm%td%tH%tM%tS", ts,ts,ts,ts,ts,ts);
+//		mapIterateRemove();
 //		printMap();
 //		extractFilePage();
 //		extractHttpPage();
+		tryFinally();
 
 	}
 	
@@ -122,6 +126,21 @@ public class MainTemporary {
 			}
 		}
 		System.out.println(JSON.toJSONString(map));
+	}
+	
+	private static void tryFinally(){
+		for (int i = 0; i < 10; i++) {
+			try(PrintWriter pw=new PrintWriter("/data/temp/pwt.1.txt")){
+				if(i%2==0){
+					continue;
+				}
+			}catch(Exception e){
+				
+			}finally{
+				System.out.println("enter finally.");
+			}
+			
+		}
 	}
 
 }
