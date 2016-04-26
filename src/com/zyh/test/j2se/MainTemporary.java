@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,7 +49,8 @@ public class MainTemporary {
 //		printMap();
 //		extractFilePage();
 //		extractHttpPage();
-		tryFinally();
+//		tryFinally();
+		tryMainValuesOrder();
 
 	}
 	
@@ -141,6 +143,18 @@ public class MainTemporary {
 			}
 			
 		}
+	}
+	
+	private static void tryMainValuesOrder(){
+		Map<String, String> map=new LinkedHashMap<>();
+		map.put("img1", "img1");
+		map.put("img2", "img2");
+		System.out.println("map.values:");
+		map.values().forEach(s->{
+			System.out.format("%s\t",s);
+		});
+		
+		
 	}
 
 }
