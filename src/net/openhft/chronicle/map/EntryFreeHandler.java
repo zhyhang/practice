@@ -27,9 +27,12 @@ import net.openhft.lang.values.LongValue;
 /**
  * Test replicated chronicle map Result:<br>
  * 1.remove key, without real free memory<br>
- * 2.zip and switch to new map, also replicated removed entries from another node<br>
+ * 2.zip and switch to new map, also replicated removed entries from another
+ * node<br>
  * 3.can hack code to free the removed (flag deleted) entries<br>
- * 4.all the node free meanwhile then zip, can real remove the entries and zip<br>
+ * 4.all the node free meanwhile then zip, can real remove the entries and zip
+ * <br>
+ * 
  * @author zhyhang
  *
  */
@@ -42,7 +45,7 @@ public class EntryFreeHandler {
 	});
 	private volatile static ReplicatedChronicleMap map;
 
-	private static final int maxEntry = 10000;
+	private static final int maxEntry = 20;
 	private static final int portRep = 9102;
 	private static final String remoteHost = "192.168.144.55";
 	private static final int putKeyNum = 20;
@@ -64,14 +67,14 @@ public class EntryFreeHandler {
 	 */
 	public static void main(String[] args) throws Exception {
 		map = createReplicatedMap(Files.createTempFile("cmap-entry-free-test.0.", ".dat").toString(), portRep);
-		
+
 		Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
 			if (getKeyRun) {
 				getKeys();
 			}
 			lookupInSeg(map, freeDeletedEntries);
 		} , 3, 3, TimeUnit.SECONDS);
-		
+
 		if (initPutSomeValues) {
 			TimeUnit.SECONDS.sleep(beforePutWaitSeconds);
 			putValue(map, putKeyNum);
@@ -82,7 +85,7 @@ public class EntryFreeHandler {
 			logger.info("step2-remove");
 			lookupInSeg(map, false);
 			TimeUnit.SECONDS.sleep(afterPutWaitSeconds);
-			logger.info("step3-replicated-after-remove-free[{}]",freeDeletedEntries);
+			logger.info("step3-replicated-after-remove-free[{}]", freeDeletedEntries);
 			lookupInSeg(map, false);
 			if (zipMap) {
 				zipMap();
@@ -135,7 +138,7 @@ public class EntryFreeHandler {
 			try {
 				MultiStoreBytes entry = segment.reuse(segmentState.tmpBytes, segment.offsetFromPos(pos));
 				long keySize = map.keySizeMarshaller.readSize(entry);
-				boolean deleted = segment.isDeleted(entry, keySize);
+				boolean deleted = entry.readBoolean(keySize + ReplicatedChronicleMap.ADDITIONAL_ENTRY_BYTES);
 				long valueSize = map.valueSizeMarshaller.readSize(entry);
 				Entry readEntry = segment.getEntry(segmentState, pos);
 				logger.info("lookup entry <{},{}>, deleted? [{}].", readEntry.getKey(),
