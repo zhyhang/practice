@@ -3,18 +3,17 @@
  */
 package com.zyh.test.j2se;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -23,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -57,7 +57,8 @@ public class MainTemporary {
 //		extractHttpPage();
 //		tryFinally();
 //		tryMainValuesOrder();
-		tryLocalNameIp();
+//		tryLocalNameIp();
+		fileTimeCheck();
 
 	}
 	
@@ -182,6 +183,16 @@ public class MainTemporary {
 	            System.out.format("ip:[%s], isloopback[%s].\n",addr.getHostAddress(),e.isLoopback());
 	        }
 	    }		
+	}
+	
+	private static void fileTimeCheck() throws Exception{
+		//on linux accurate to second
+		//on windows accurate to nanosecond
+		String fileName="/data/temp/ExampleZipReplicatedCache.dat.0";
+		FileTime fileTime = Files.getLastModifiedTime(Paths.get(fileName));
+		System.out.format("Files: file time [%s], millis[%d], nanos[%d]\n", fileTime.toString(),fileTime.toMillis(),fileTime.to(TimeUnit.NANOSECONDS));
+		File file=new File(fileName);
+		System.out.format("File: file time millis[%d]\n", file.lastModified());
 	}
 
 }
