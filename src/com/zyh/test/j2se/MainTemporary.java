@@ -5,14 +5,21 @@ package com.zyh.test.j2se;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,7 +55,9 @@ public class MainTemporary {
 //		printMap();
 //		extractFilePage();
 //		extractHttpPage();
-		tryFinally();
+//		tryFinally();
+//		tryMainValuesOrder();
+		tryLocalNameIp();
 
 	}
 	
@@ -141,6 +150,38 @@ public class MainTemporary {
 			}
 			
 		}
+	}
+	
+	private static void tryMainValuesOrder(){
+		Map<String, String> map=new LinkedHashMap<>();
+		map.put("img1", "img1");
+		map.put("img2", "img2");
+		System.out.println("map.values:");
+		map.values().forEach(s->{
+			System.out.format("%s\t",s);
+		});
+	}
+	
+	private static void tryLocalNameIp() throws IOException{
+		System.out.println();
+		System.out.println(InetAddress.getLocalHost().getHostName());
+		System.out.println("Your Host addr: " + InetAddress.getLocalHost().getHostAddress());  // often returns "127.0.0.1"
+		try(ServerSocket ss1 = new ServerSocket(0)){
+			System.out.println(ss1.getLocalSocketAddress().toString());
+		}		
+		
+	    Enumeration<NetworkInterface> n = NetworkInterface.getNetworkInterfaces();
+	    for (; n.hasMoreElements();)
+	    {
+	        NetworkInterface e = n.nextElement();
+
+	        Enumeration<InetAddress> a = e.getInetAddresses();
+	        for (; a.hasMoreElements();)
+	        {
+	            InetAddress addr = a.nextElement();
+	            System.out.format("ip:[%s], isloopback[%s].\n",addr.getHostAddress(),e.isLoopback());
+	        }
+	    }		
 	}
 
 }
