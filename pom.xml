@@ -127,10 +127,12 @@
 					<groupId>com.sun.java</groupId>
 					<artifactId>tools</artifactId>
 				</exclusion>
+				<!-- 
 				<exclusion>
 					<groupId>org.codehaus.jettison</groupId>
 					<artifactId>jettison</artifactId>
 				</exclusion>
+				 -->
 				<exclusion>
 					<groupId>org.ops4j.pax.url</groupId>
 					<artifactId>pax-url-aether</artifactId>

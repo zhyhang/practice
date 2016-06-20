@@ -40,6 +40,12 @@ public class ChronicleMapTcpReplica {
 	private static String persistFile;
 	private static ChronicleMap<String, LongValue> map;
 	private final static transient Logger logger = LoggerFactory.getLogger(ChronicleMapTcpReplica.class);
+	private static ThreadLocal<LongValue> cacheValue=new ThreadLocal<LongValue>(){
+		@Override
+		protected LongValue initialValue() {
+			return DataValueClasses.newDirectInstance(LongValue.class);
+		}
+	};
 
 	public static void main(String[] argv) throws Exception {
 		checkArguments(argv);
@@ -47,7 +53,9 @@ public class ChronicleMapTcpReplica {
 		// replication between two server with different keys
 		// diffKeyReplica();
 		// test long add
-		incr();
+		//incr();
+		// test large keys put in map replicate
+		putBulkKeys();
 
 	}
 
@@ -74,7 +82,7 @@ public class ChronicleMapTcpReplica {
 				.of(port, new InetSocketAddress(host, port)).heartBeatInterval(1L, TimeUnit.SECONDS)
 				.autoReconnectedUponDroppedConnection(true);
 		ChronicleMapBuilder<String, LongValue> mapBuilder = ChronicleMapBuilder.of(String.class, LongValue.class)
-				.entries(100000L).replication(identifier, tcpConfig);
+				.entries(100000000L).replication(identifier, tcpConfig);
 		map = mapBuilder.createPersistedTo(f);
 		String key1=KEY_INCREMENT + "-1";
 		String key2=KEY_INCREMENT + "-2";
@@ -89,6 +97,7 @@ public class ChronicleMapTcpReplica {
 		while(!map.containsKey(key1) || !map.containsKey(key2) ){
 			TimeUnit.SECONDS.sleep(1);
 		}
+		
 		logger.info("{}-{},{}-{}",key1,map.get(key1),key2,map.get(key2));
 	}
 
@@ -160,6 +169,35 @@ public class ChronicleMapTcpReplica {
 			end(1);
 		}else{
 			end(60); // wait 60 seconds again
+		}
+	}
+	
+//	private static void putBulkKeys() throws Exception{
+//		TimeUnit.SECONDS.sleep(30);
+//		int keyNum=100000000;
+//		logger.info("begin-put-bulk-keys-clear, map size[{}].",map.size());
+//		map.clear();
+//		logger.info("end-put-bulk-keys-clear, map size[{}]",map.size());
+//		logger.info("begin-put-bulk-keys-ing, map size[{}].",map.size());
+//		for (int i = 0; i < keyNum; i++) {
+//			LongValue value=cacheValue.get();
+//			value.setValue(i);
+//			map.put(String.valueOf(i), value);
+//		}
+//		logger.info("end-put-bulk-keys-ing, map size[{}].",map.size());
+//		TimeUnit.HOURS.sleep(1);
+//		map.close();
+//	}
+	
+	private static void putBulkKeys()  {
+		try{
+		while (true) {
+			logger.info("map size[{}]", map.size());
+			TimeUnit.SECONDS.sleep(5);
+		}
+		}
+		catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 
