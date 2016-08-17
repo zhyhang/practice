@@ -10,11 +10,11 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Enumeration;
@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +37,6 @@ import com.alibaba.fastjson.JSON;
 
 import jodd.lagarto.dom.Document;
 import jodd.lagarto.dom.LagartoDOMBuilder;
-import net.openhft.lang.io.Bytes;
 
 /**
  * 
@@ -62,7 +62,8 @@ public class MainTemporary {
 		// tryMainValuesOrder();
 		// tryLocalNameIp();
 		// fileTimeCheck();
-		intToHexBytes();
+		// intToHexBytes();
+		sortChinese();
 
 	}
 
@@ -205,7 +206,7 @@ public class MainTemporary {
 			System.out.println(buffer.get());
 		}
 		for (int i = 0; i < Integer.BYTES; i++) {
-			byte b = ((byte) (value >> (32 - (i + 1) <<3)));
+			byte b = ((byte) (value >> (32 - (i + 1) << 3)));
 			ibs[i] = b;
 			byte hb = (byte) (0x0f & (b >> 4));
 			if (hb <= 9 && hb >= 0) {
@@ -225,6 +226,20 @@ public class MainTemporary {
 		System.out.println(value);
 		System.out.println(new String(ibs));
 		System.out.println("end");
+	}
+
+	public static void sortChinese() {
+		String sortingStr = "这是一个This is a中文简单字符串Simple Chinese string.";
+		StringBuilder sortedSb = new StringBuilder(sortingStr.length());
+		sortingStr.codePoints()
+				.mapToObj(i -> Character.toChars(i)).sorted((chs1, chs2) -> Collator
+						.getInstance(Locale.SIMPLIFIED_CHINESE).compare(new String(chs1), new String(chs2)))
+				.forEach(chs -> {
+					sortedSb.append(chs);
+				});
+		System.out.println("\n" + sortingStr);
+		System.out.println("\n" + sortedSb);
+
 	}
 
 }
