@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -47,13 +48,16 @@ import jodd.lagarto.dom.LagartoDOMBuilder;
  */
 public class MainTemporary {
 
+	private static int stackDeep = 0;
+
 	/**
 	 * @param args
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
 		long ts = System.currentTimeMillis();
-		System.out.format("%tY%tm%td%tH%tM%tS", ts, ts, ts, ts, ts, ts);
+		System.out.format("%tY%tm%td%tH%tM%tS\n", ts, ts, ts, ts, ts, ts);
+		System.out.format("%d,%d\n", 0b00001000, Long.numberOfTrailingZeros(0b00001000));
 		// mapIterateRemove();
 		// printMap();
 		// extractFilePage();
@@ -64,6 +68,9 @@ public class MainTemporary {
 		// fileTimeCheck();
 		// intToHexBytes();
 		sortChinese();
+		// intToHexBytes();
+		// streamIssue();
+		// stackDeep();
 
 	}
 
@@ -228,18 +235,28 @@ public class MainTemporary {
 		System.out.println("end");
 	}
 
+	public static void streamIssue() {
+		System.out.println();
+		longs().limit(5).forEach(System.out::println);
+	}
+
+	public static Stream<Long> longs() {
+		return Stream.iterate(1L, i -> 1L + longs().skip(i - 1L).findFirst().get());
+	}
+
+	public static void stackDeep() {
+		System.err.println(++stackDeep);
+		stackDeep();
+	}
+
 	public static void sortChinese() {
-		String sortingStr = "这是一个This is a中文简单字符串Simple Chinese string.";
+		String sortingStr = "这是一个This is a中文简单字符串，不是夢Simple Chinese string.";
 		StringBuilder sortedSb = new StringBuilder(sortingStr.length());
-		sortingStr.codePoints()
-				.mapToObj(i -> Character.toChars(i)).sorted((chs1, chs2) -> Collator
-						.getInstance(Locale.SIMPLIFIED_CHINESE).compare(new String(chs1), new String(chs2)))
-				.forEach(chs -> {
-					sortedSb.append(chs);
-				});
+		sortingStr.codePoints().mapToObj(i -> Character.toChars(i))
+				.sorted((chs1, chs2) -> Collator.getInstance(Locale.CHINA).compare(new String(chs1), new String(chs2)))
+				.reduce(sortedSb, (sb, chs) -> sb.append(chs), (sb1, sb2) -> sb2);
 		System.out.println("\n" + sortingStr);
 		System.out.println("\n" + sortedSb);
-
 	}
 
 }
