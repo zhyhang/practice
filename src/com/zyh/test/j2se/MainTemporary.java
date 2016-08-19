@@ -252,7 +252,7 @@ public class MainTemporary {
 	public static void sortChinese() {
 		String sortingStr = "这是一个This is a中文简单字符串，不是夢Simple Chinese string.";
 		StringBuilder sortedSb = new StringBuilder(sortingStr.length());
-		sortingStr.codePoints().mapToObj(i -> Character.toChars(i))
+		sortingStr.codePoints().mapToObj(Character::toChars)
 				.sorted((chs1, chs2) -> Collator.getInstance(Locale.CHINA).compare(new String(chs1), new String(chs2)))
 				.reduce(sortedSb, (sb, chs) -> sb.append(chs), (sb1, sb2) -> sb2);
 		System.out.println("\n" + sortingStr);
