@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -67,10 +69,11 @@ public class MainTemporary {
 		// tryLocalNameIp();
 		// fileTimeCheck();
 		// intToHexBytes();
-		sortChinese();
+//		sortChinese();
 		// intToHexBytes();
 		// streamIssue();
 		// stackDeep();
+		splitStringReserve();
 
 	}
 
@@ -257,6 +260,12 @@ public class MainTemporary {
 				.reduce(sortedSb, (sb, chs) -> sb.append(chs), (sb1, sb2) -> sb2);
 		System.out.println("\n" + sortingStr);
 		System.out.println("\n" + sortedSb);
+	}
+	
+	public static void splitStringReserve(){
+		String s="tid::63133";
+		String[] splited = StringUtils.splitByWholeSeparatorPreserveAllTokens(s, ":");
+		System.out.println(splited.length+"\t"+Arrays.deepToString(splited));
 	}
 
 }
