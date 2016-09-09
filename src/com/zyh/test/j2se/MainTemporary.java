@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -57,9 +59,10 @@ public class MainTemporary {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		long ts = System.currentTimeMillis();
-		System.out.format("%tY%tm%td%tH%tM%tS\n", ts, ts, ts, ts, ts, ts);
-		System.out.format("%d,%d\n", 0b00001000, Long.numberOfTrailingZeros(0b00001000));
+		// long ts = System.currentTimeMillis();
+		// System.out.format("%tY%tm%td%tH%tM%tS\n", ts, ts, ts, ts, ts, ts);
+		// System.out.format("%d,%d\n", 0b00001000,
+		// Long.numberOfTrailingZeros(0b00001000));
 		// mapIterateRemove();
 		// printMap();
 		// extractFilePage();
@@ -69,11 +72,13 @@ public class MainTemporary {
 		// tryLocalNameIp();
 		// fileTimeCheck();
 		// intToHexBytes();
-//		sortChinese();
+		// sortChinese();
 		// intToHexBytes();
 		// streamIssue();
 		// stackDeep();
-		splitStringReserve();
+		// splitStringReserve();
+		// uuidJava();
+		completableFutureLearn();
 
 	}
 
@@ -261,11 +266,20 @@ public class MainTemporary {
 		System.out.println("\n" + sortingStr);
 		System.out.println("\n" + sortedSb);
 	}
-	
-	public static void splitStringReserve(){
-		String s="tid::63133";
+
+	public static void splitStringReserve() {
+		String s = "tid::63133";
 		String[] splited = StringUtils.splitByWholeSeparatorPreserveAllTokens(s, ":");
-		System.out.println(splited.length+"\t"+Arrays.deepToString(splited));
+		System.out.println(splited.length + "\t" + Arrays.deepToString(splited));
+	}
+
+	public static void uuidJava() {
+		System.out.println(UUID.randomUUID());
+	}
+
+	public static void completableFutureLearn() {
+		CompletableFuture<String> cf = CompletableFuture.completedFuture("I'm done!");
+		System.out.format("isDone[%b], join[%s]\n", cf.isDone(),cf.join());
 	}
 
 }
