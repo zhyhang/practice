@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
@@ -78,7 +79,10 @@ public class MainTemporary {
 		// stackDeep();
 		// splitStringReserve();
 		// uuidJava();
-		completableFutureLearn();
+		// completableFutureLearn();
+		// ipAddressCodec();
+		checkLambdaInstance();
+		checkLambdaInstance();
 
 	}
 
@@ -279,7 +283,40 @@ public class MainTemporary {
 
 	public static void completableFutureLearn() {
 		CompletableFuture<String> cf = CompletableFuture.completedFuture("I'm done!");
-		System.out.format("isDone[%b], join[%s]\n", cf.isDone(),cf.join());
+		System.out.format("isDone[%b], join[%s]\n", cf.isDone(), cf.join());
+	}
+
+	public static void ipAddressCodec() {
+		InetSocketAddress remote = new InetSocketAddress("192.168.152.220", 1024);
+		System.out.println(remote.getPort());
+		System.out.println(remote.getAddress().getHostAddress());
+		for (byte b : remote.getAddress().getAddress()) {
+			System.out.println(b);
+		}
+		byte[] ipbs = remote.getAddress().getAddress();
+		long ipport = Byte.toUnsignedLong(ipbs[0]) << 56 | Byte.toUnsignedLong(ipbs[1]) << 48
+				| Byte.toUnsignedLong(ipbs[2]) << 40 | Byte.toUnsignedLong(ipbs[3]) << 32
+				| Integer.toUnsignedLong(remote.getPort());
+		System.out.println((ipport >>> 56) + "." + (ipport >>> 48 & 0xff) + "." + (ipport >>> 40 & 0xff) + "."
+				+ (ipport >>> 32 & 0xff) + ":" + (ipport & 0xffff));
+	}
+
+	public static void checkLambdaInstance() {
+		Map<Integer, Integer> map = new HashMap<>();
+		map.put(1, 1);
+		map.put(2, 2);
+		final StringBuilder sb = new StringBuilder(8);
+		Stream<Entry<Integer, Integer>> stream = map.entrySet().stream();
+		// below, every lambda only one instance, although main calling two times
+		 stream.reduce(sb, MainTemporary::lambda1, (sb1,sb2)->sb1);
+		// below, second lambda will new one instance every call
+		//stream.reduce(sb, MainTemporary::lambda1, (sb1, sb2) -> sb);
+		System.out.println(sb);
+	}
+
+	private static StringBuilder lambda1(StringBuilder sb, Entry<Integer, Integer> e) {
+		sb.append(e.getKey().intValue()).append(',');
+		return sb;
 	}
 
 }
