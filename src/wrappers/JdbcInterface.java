@@ -1,20 +1,7 @@
 package wrappers;
 
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Date;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.Arrays;
+import java.math.*;
+import java.sql.*;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -35,22 +22,18 @@ public class JdbcInterface {
     ResultSet         rs = null;
     ResultSetMetaData rsmd = null;
     
-       
-    
     // === Constructors/finalize  =========================================
     public JdbcInterface() {
-    	this(true);
+    	this(false);
     } // end of default constructor
 
     public JdbcInterface(boolean b) {
-    	DEBUG = true;
+    	DEBUG = b;
     } // end of constructor
     
     protected void SetErrmsg(Exception e) {
-        if (DEBUG){
-        	e.printStackTrace();
+        if (DEBUG)
     		System.out.println(e.getMessage());
-        }
       	
         Errmsg = e.toString();
     } // end of SetErrmsg
@@ -366,21 +349,12 @@ public class JdbcInterface {
   		if (CatisSchema)
   	      rs = dbmd.getColumns(parms[1], null, parms[2], parms[3]);
   		else	
-  			if(DEBUG){
-  				rs = dbmd.getColumns("hive", "optimus", parms[2], parms[3]);
-  			}else{
-  				rs = dbmd.getColumns(parms[0], parms[1], parms[2], parms[3]);
-  			}
+    	  rs = dbmd.getColumns(parms[0], parms[1], parms[2], parms[3]);
     	
 		if (rs != null) {
 		  rsmd = rs.getMetaData();
     	  ncol = rsmd.getColumnCount();
 		} // endif rs
-		
-		
-  		if(DEBUG){
-				System.out.format("GetColumns' parms[%s], meta data count[%d].\n", Arrays.deepToString(parms),ncol);
-  		}
 		
       } catch(SQLException se) {
   		SetErrmsg(se);
@@ -390,9 +364,6 @@ public class JdbcInterface {
     } // end of GetColumns
     
     public int GetTables(String[] parms) {
-  		if(DEBUG){
-			System.out.format("GetTables' begin\n");
-		}
         int ncol = -1;
         String[] typ = null;
         
@@ -413,10 +384,6 @@ public class JdbcInterface {
   		    rsmd = rs.getMetaData();
       	    ncol = rsmd.getColumnCount();
   		  } // endif rs
-  		  
-  		if(DEBUG){
-			System.out.format("GetTables' parms[%s], meta data count[%d].\n", Arrays.deepToString(parms),ncol);
-		}
   		
         } catch(SQLException se) {
     	  SetErrmsg(se);
@@ -575,19 +542,24 @@ public class JdbcInterface {
 	  } else try {
 		if (n == 0)
 		  n = rs.findColumn(name);
-		int type=rsmd.getColumnType(n);
-		if(DEBUG){
-			name=rsmd.getColumnName(n);
-			if(Types.LONGNVARCHAR==type){
-				type=Types.VARCHAR;
-			}
-			System.out.format("ColumnType, name[%s], no.[%d],type[%d].\n", name, n, type);
-		}
-	    return type;
+		
+				//by zhyhang convert nchar series to char series
+				int type = rsmd.getColumnType(n);
+				if (Types.NVARCHAR == type) {
+					return Types.VARCHAR;
+				} else if (Types.NCHAR == type) {
+					return Types.CHAR;
+				} else if (Types.LONGNVARCHAR == type) {
+					return Types.VARCHAR;
+				} else {
+					return type;
+				}
+				// end by zhyhang
+				
 	  } catch (SQLException se) {
 		SetErrmsg(se);
 	  } //end try/catch
-	  	  
+	    	  
 	  return 666;   // Not a type
 	} // end of ColumnType
 	    
@@ -600,12 +572,7 @@ public class JdbcInterface {
 		val[1] = rsmd.getPrecision(n);
 		val[2] = rsmd.getScale(n);
 		val[3] = rsmd.isNullable(n);
-		String label=rsmd.getColumnLabel(n);
-		if(DEBUG){
-			System.out.format("ColumnDesc: no.[%d], label[%s], type[%d], precision[%d], scale[%d], nullable[%d]",
-					n,label,val[0],val[1],val[2],val[3]);
-		}
-	    return label;
+	    return rsmd.getColumnLabel(n);
 	  } catch (SQLException se) {
 		SetErrmsg(se);
 	  } //end try/catch
@@ -641,18 +608,9 @@ public class JdbcInterface {
 	  if (rs == null) {
 		System.out.println("No result set");
 	  } else try {
-		  name=rsmd.getColumnName(n);
-
 		BigDecimal bigDecimal = (n > 0) ? rs.getBigDecimal(n) : rs.getBigDecimal(name);
-        long value = bigDecimal != null ? bigDecimal.longValue() : 0;
-		  System.out.format("BigintField-note: no.[%d], name[%s], type[%d], env:\n%s.\n", n,name,
-				  value,
-				  "rs:"+rs.toString()+"\tdebug:"+this.DEBUG+"\tconnect:"+this.conn.toString());
-        value=value==Types.LONGNVARCHAR?Types.VARCHAR:value;
-        return value;
+        return bigDecimal != null ? bigDecimal.longValue() : 0;
 	  } catch (SQLException se) {
-		  System.out.format("BigintField-error: no.[%d], name[%s], env:\n%s.\n", n,name,
-				  "rs:"+rs.toString()+"\tdebug:"+this.DEBUG+"\tconnect:"+this.conn.toString());
 		SetErrmsg(se);
 	  } //end try/catch
 	    	  
@@ -765,46 +723,6 @@ public class JdbcInterface {
     	
     	return size;
     } // end of GetDrivers
-
-	public static Hashtable<String, DataSource> getDst() {
-		return dst;
-	}
-
-	public boolean isDEBUG() {
-		return DEBUG;
-	}
-
-	public boolean isCatisSchema() {
-		return CatisSchema;
-	}
-
-	public String getErrmsg() {
-		return Errmsg;
-	}
-
-	public Connection getConn() {
-		return conn;
-	}
-
-	public DatabaseMetaData getDbmd() {
-		return dbmd;
-	}
-
-	public Statement getStmt() {
-		return stmt;
-	}
-
-	public PreparedStatement getPstmt() {
-		return pstmt;
-	}
-
-	public ResultSet getRs() {
-		return rs;
-	}
-
-	public ResultSetMetaData getRsmd() {
-		return rsmd;
-	}
     
     /**
     * Adds the specified path to the java library path
@@ -846,10 +764,7 @@ public class JdbcInterface {
     	
     	return 0;
     } // end of addLibraryPath
-    */
-    
-    
-    
+    */   
 	    
 } // end of class JdbcInterface
 
