@@ -3,9 +3,14 @@
  */
 package com.zyh.test.j2se;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -30,6 +35,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -81,8 +87,9 @@ public class MainTemporary {
 		// uuidJava();
 		// completableFutureLearn();
 		// ipAddressCodec();
-		checkLambdaInstance();
-		checkLambdaInstance();
+		// checkLambdaInstance();
+		// checkLambdaInstance();
+		lambdaSerialize();
 
 	}
 
@@ -114,17 +121,13 @@ public class MainTemporary {
 				Base64.getEncoder().encodeToString(pyadPage.substring(bbi + 6, bei).getBytes(StandardCharsets.UTF_8)));
 
 		/*
-		 * System.out.println("Body:"); Node[] childNodes = doc.getChildNodes();
-		 * int count = 0; for (int i = 0; i < childNodes.length; i++) { String
-		 * html = childNodes[i].getHtml(); if (StringUtils.isNotBlank(html)) {
-		 * System.out.println(count++); System.out.println(html); if
-		 * (childNodes[i].getFirstChild() != null) {
+		 * System.out.println("Body:"); Node[] childNodes = doc.getChildNodes(); int count = 0; for (int i = 0; i <
+		 * childNodes.length; i++) { String html = childNodes[i].getHtml(); if (StringUtils.isNotBlank(html)) {
+		 * System.out.println(count++); System.out.println(html); if (childNodes[i].getFirstChild() != null) {
 		 * System.out.println(childNodes[i].getFirstChild().getNodeValue());
-		 * System.out.println(Base64.getEncoder().encodeToString(
-		 * childNodes[i].getFirstChild().getNodeValue().getBytes(
-		 * StandardCharsets.UTF_8))); } } } System.out.println("Body(Base64):");
-		 * for (int i = 0; i < childNodes.length; i++) { System.out.println(
-		 * Base64.getEncoder().encodeToString(childNodes[i].getHtml().getBytes(
+		 * System.out.println(Base64.getEncoder().encodeToString( childNodes[i].getFirstChild().getNodeValue().getBytes(
+		 * StandardCharsets.UTF_8))); } } } System.out.println("Body(Base64):"); for (int i = 0; i < childNodes.length;
+		 * i++) { System.out.println( Base64.getEncoder().encodeToString(childNodes[i].getHtml().getBytes(
 		 * StandardCharsets.UTF_8))); }
 		 */
 	}
@@ -262,7 +265,7 @@ public class MainTemporary {
 	}
 
 	public static void sortChinese() {
-		String sortingStr = "这是一个This is a中文简单字符串，不是夢Simple Chinese string.";
+		String sortingStr = "杩欐槸涓�涓猅his is a涓枃绠�鍗曞瓧绗︿覆锛屼笉鏄あSimple Chinese string.";
 		StringBuilder sortedSb = new StringBuilder(sortingStr.length());
 		sortingStr.codePoints().mapToObj(Character::toChars)
 				.sorted((chs1, chs2) -> Collator.getInstance(Locale.CHINA).compare(new String(chs1), new String(chs2)))
@@ -308,15 +311,33 @@ public class MainTemporary {
 		final StringBuilder sb = new StringBuilder(8);
 		Stream<Entry<Integer, Integer>> stream = map.entrySet().stream();
 		// below, every lambda only one instance, although main calling two times
-		 stream.reduce(sb, MainTemporary::lambda1, (sb1,sb2)->sb1);
+		stream.reduce(sb, MainTemporary::lambda1, (sb1, sb2) -> sb1);
 		// below, second lambda will new one instance every call
-		//stream.reduce(sb, MainTemporary::lambda1, (sb1, sb2) -> sb);
+		// stream.reduce(sb, MainTemporary::lambda1, (sb1, sb2) -> sb);
 		System.out.println(sb);
 	}
 
 	private static StringBuilder lambda1(StringBuilder sb, Entry<Integer, Integer> e) {
 		sb.append(e.getKey().intValue()).append(',');
 		return sb;
+	}
+
+	private static void lambdaSerialize() {
+		int coefficient = 3;
+		DoubleUnaryOperator duo = (DoubleUnaryOperator & Serializable) d -> {
+			return Math.sqrt(d) * coefficient;
+		};
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try {
+			ObjectOutputStream oos = new ObjectOutputStream(baos);
+			oos.writeObject(duo);
+			byte[] seData = baos.toByteArray();
+			ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(seData));
+			DoubleUnaryOperator duoDes = (DoubleUnaryOperator) ois.readObject();
+			System.out.println(duoDes.applyAsDouble(4.0));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 }
