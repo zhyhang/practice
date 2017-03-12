@@ -26,7 +26,7 @@ public class CompletableFutureAsync {
 			int sequence = runCounter.incrementAndGet();
 			System.out.println("task" + sequence + "\tsleeping...");
 			try {
-				TimeUnit.MILLISECONDS.sleep(2500);
+				TimeUnit.MILLISECONDS.sleep(1000*sequence);
 				System.out.println("task" + sequence + "\twake");
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -37,7 +37,7 @@ public class CompletableFutureAsync {
 				CompletableFuture.runAsync(timeWaitRun), CompletableFuture.runAsync(timeWaitRun));
 		System.out.println("waiting...");
 		cfs.get(3, TimeUnit.SECONDS);
-//		cfs.get(2, TimeUnit.SECONDS); // will throw timeout exception
+//		cfs.get(2, TimeUnit.SECONDS); // will throw timeout exception, because task3 not complete
 		System.out.println("all complete normally!");
 
 	}
