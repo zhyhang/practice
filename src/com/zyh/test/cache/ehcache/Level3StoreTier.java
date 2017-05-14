@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.zyh.ehcache;
+package com.zyh.test.cache.ehcache;
 
 import java.io.Serializable;
 import java.util.List;

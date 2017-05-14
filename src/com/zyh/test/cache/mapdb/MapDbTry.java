@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.zyh.test.kvcache.diskstore.mapdb;
+package com.zyh.test.cache.mapdb;
 
 import java.util.concurrent.ConcurrentMap;
 

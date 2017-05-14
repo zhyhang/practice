@@ -1,4 +1,4 @@
-package com.zyh.ehcache.cluster;
+package com.zyh.test.cache.ehcache;
 
 import static java.net.URI.create;
 import static org.ehcache.clustered.client.config.builders.ClusteredResourcePoolBuilder.clusteredDedicated;
