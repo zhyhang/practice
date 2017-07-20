@@ -39,7 +39,7 @@ public class MobilePhoneNumbersArea {
 		System.out.println(parse("13677086736"));
 		System.out.println(parse("13532558895"));
 		System.out.println(parse("15311455887"));
-		System.out.println(parse("18603152359"));
+		System.out.println(parse("18603151358"));
 		System.out.println(parse("13452840800"));
 	}
 
