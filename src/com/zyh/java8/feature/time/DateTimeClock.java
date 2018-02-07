@@ -19,13 +19,18 @@ import java.util.TimeZone;
  */
 public class DateTimeClock {
 
+	/**
+	 * Zone/offset/default zone please refer:</br>
+	 * https://stackoverflow.com/questions/41427384/how-to-get-default-zoneoffset-in-java8
+	 * @param args
+	 */
 	public static void main(String[] args) {
 
 		// Date and time with timezone in Java 8 ZoneId america =
 		// ZoneId.of("America/New_York");
-		LocalDateTime localtDateAndTime = LocalDateTime.now();
-		ZonedDateTime dateAndTimeInNewYork = ZonedDateTime.of(localtDateAndTime, ZoneId.of("America/New_York"));
-		System.out.println("Current date and time in a local timezone : " + localtDateAndTime);
+		LocalDateTime localDateAndTime = LocalDateTime.now();
+		ZonedDateTime dateAndTimeInNewYork = ZonedDateTime.of(localDateAndTime, ZoneId.of("America/New_York"));
+		System.out.println("Current date and time in a local timezone : " + localDateAndTime);
 		System.out.println("Current date and time in a particular timezone : " + dateAndTimeInNewYork);
 
 		// parse local date time
