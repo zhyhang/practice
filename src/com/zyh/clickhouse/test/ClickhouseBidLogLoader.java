@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.zyh.ipinyou.test;
+package com.zyh.clickhouse.test;
 
 import java.io.File;
 import java.io.IOException;
