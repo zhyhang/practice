@@ -137,7 +137,7 @@ class SwiffyRequest {
 }
 
 class SwiffyReqParams {
-	private String client = "IPinyou F2H5 Converter from Swiffy";
+	private String client = "F2H5 Converter from Swiffy";
 
 	private String input = null;
 

@@ -36,9 +36,7 @@ public class JoddHttpClient {
 					i -> {
 						return new Thread(() -> {
 							// http://192.168.144.135:8180/template/tomcat/readme
-							// http://dsp.ipinyou.com/test.jsp
-							// http://cm.ipinyou.com/query/cookie.jsp
-						String url = "http://cm.ipinyou.com/query/cookie.jsp";
+						String url = "http://cn.bing.com";
 								try {
 								    HttpRequest httpRequest = HttpRequest.get(url);
 									long tsbms = System.currentTimeMillis();

@@ -9,7 +9,7 @@ import net.openhft.hashing.LongHashFunction;
  */
 public class ZeroAllocationHashing {
 	public static void main(String[] args) {
-		String hashStr="https://fms.ipinyou.com/a.jsp";
+		String hashStr="test";
 		System.out.format("city hash code: %d,java hash code: %d.\n", LongHashFunction.city_1_1().hashChars(hashStr),hashStr.hashCode());
 	}
 }

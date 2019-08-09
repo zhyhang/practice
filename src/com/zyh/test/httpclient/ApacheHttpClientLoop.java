@@ -29,7 +29,7 @@ public class ApacheHttpClientLoop {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		String url = "http://cm.ipinyou.com/query/cookie.jsp";
+		String url = "https://cn.bing.com";
 		url = args != null && args.length > 0 ? args[0] : url;
 		int loopCount = 100;
 		loopCount = args != null && args.length > 1 ? Integer.parseInt(args[1]) : loopCount;

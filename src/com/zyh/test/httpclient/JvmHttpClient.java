@@ -33,9 +33,7 @@ public class JvmHttpClient {
 					i -> {
 						return new Thread(() -> {
 							// http://192.168.144.135:8180/template/tomcat/readme
-							// http://dsp.ipinyou.com/test.jsp
-							// http://cm.ipinyou.com/query/cookie.jsp
-						String url = "http://stats.ipinyou.com/batch/adv";
+						String url = "http://cn.bing.com";
 								try {
 									HttpURLConnection conn = (HttpURLConnection)new URL(url).openConnection();
 									conn.setDoOutput(true);

@@ -12,9 +12,9 @@ public class DynaCompTest {
 	private final static DynamicClassLoader cl=new DynamicClassLoader(DynaCompTest.class.getClassLoader());
 	
     public static void main(String[] args) throws Exception {
-        String fullName = "com.ipinyou.optimus.plugin.DynaClass";
+        String fullName = "org.yanhuang.plugin.DynaClass";
         StringBuilder src = new StringBuilder();
-        src.append("package com.ipinyou.optimus.plugin;\n");
+        src.append("package org.yanhuang.plugin;\n");
         src.append("public class DynaClass implements com.zyh.test.j2se.jit.DynaCompTest.Embedded{\n");
         src.append("    public void process(javax.swing.JButton btn) {\n");
         src.append("        int sum=0;\n");
