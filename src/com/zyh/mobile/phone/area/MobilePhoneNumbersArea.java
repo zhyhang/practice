@@ -35,12 +35,7 @@ public class MobilePhoneNumbersArea {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println(parse("13488651540"));
-		System.out.println(parse("13677086736"));
-		System.out.println(parse("13532558895"));
-		System.out.println(parse("15311455887"));
-		System.out.println(parse("18603151358"));
-		System.out.println(parse("13452840800"));
+		System.out.println(parse("13411651646"));
 	}
 
 }
